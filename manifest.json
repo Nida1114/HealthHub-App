@@ -1,0 +1,44 @@
+{
+  "name": "HealthHub — Smart Health Reminder",
+  "short_name": "HealthHub",
+  "description": "Track water, sleep, medicine & exercise with AI health companion",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "lang": "en",
+  "categories": ["health", "fitness", "medical"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Water Tracker",
+      "short_name": "Water",
+      "description": "Log water intake",
+      "url": "./index.html#water",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Health Chat",
+      "short_name": "AI Chat",
+      "description": "Chat with AI health assistant",
+      "url": "./index.html#chat",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
