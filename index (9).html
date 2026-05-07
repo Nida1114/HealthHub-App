@@ -1,0 +1,4372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HealthHub — Smart Health Reminder System</title>
+
+<!-- PWA -->
+<meta name="application-name" content="HealthHub">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HealthHub">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#070b14">
+<meta name="description" content="Smart Health Reminder System with AI companion">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   CSS VARIABLES
+============================================================ */
+:root {
+  --bg-base:       #070b14;
+  --bg-surface:    #0d1526;
+  --bg-card:       rgba(13,21,38,0.85);
+  --bg-card-solid: #0d1526;
+  --bg-sidebar:    #080e1c;
+  --glass:         rgba(255,255,255,0.04);
+  --glass-border:  rgba(255,255,255,0.08);
+  --glass-hover:   rgba(255,255,255,0.07);
+
+  --blue:    #3b82f6;
+  --blue-l:  #60a5fa;
+  --cyan:    #06b6d4;
+  --cyan-l:  #22d3ee;
+  --purple:  #8b5cf6;
+  --purple-l:#a78bfa;
+  --green:   #10b981;
+  --green-l: #34d399;
+  --amber:   #f59e0b;
+  --amber-l: #fbbf24;
+  --red:     #ef4444;
+
+  --text-1:   #f0f6ff;
+  --text-2:   #94a3b8;
+  --text-3:   #4b5a73;
+  --border:   rgba(255,255,255,0.07);
+
+  --glow-blue:   0 0 20px rgba(59,130,246,0.35);
+  --glow-cyan:   0 0 20px rgba(6,182,212,0.35);
+  --glow-purple: 0 0 20px rgba(139,92,246,0.35);
+  --glow-green:  0 0 20px rgba(16,185,129,0.35);
+
+  --shadow-sm:  0 2px 12px rgba(0,0,0,0.4);
+  --shadow-md:  0 8px 32px rgba(0,0,0,0.5);
+  --shadow-lg:  0 20px 60px rgba(0,0,0,0.7);
+
+  --radius-sm: 10px;
+  --radius:    16px;
+  --radius-lg: 22px;
+  --sidebar-w: 256px;
+  --header-h:  68px;
+  --ease:      cubic-bezier(.4,0,.2,1);
+  --spring:    cubic-bezier(.34,1.56,.64,1);
+  --t:         0.22s;
+}
+[data-theme="light"] {
+  --bg-base:       #f0f4fb;
+  --bg-surface:    #e8edf8;
+  --bg-card:       rgba(255,255,255,0.92);
+  --bg-card-solid: #ffffff;
+  --bg-sidebar:    #1a2744;
+  --glass:         rgba(255,255,255,0.6);
+  --glass-border:  rgba(0,0,0,0.07);
+  --glass-hover:   rgba(255,255,255,0.8);
+  --text-1:   #0f172a;
+  --text-2:   #475569;
+  --text-3:   #94a3b8;
+  --border:   rgba(0,0,0,0.07);
+  --shadow-sm:  0 2px 12px rgba(0,0,0,0.06);
+  --shadow-md:  0 8px 32px rgba(0,0,0,0.10);
+  --shadow-lg:  0 20px 60px rgba(0,0,0,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-1);
+  min-height: 100vh;
+  transition: background var(--t) var(--ease), color var(--t) var(--ease);
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-3); border-radius: 99px; }
+
+/* ============================================================
+   INTRO / SPLASH SCREEN
+============================================================ */
+#intro-screen {
+  position: fixed; inset: 0; z-index: 2000;
+  background: #050a14;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+#intro-screen.hide-intro {
+  animation: introExit 0.9s cubic-bezier(.76,0,.24,1) forwards;
+  pointer-events: none;
+}
+@keyframes introExit {
+  0%   { opacity:1; transform: scale(1); }
+  60%  { opacity:1; transform: scale(1.06); }
+  100% { opacity:0; transform: scale(1.12); }
+}
+
+/* Intro background gradient mesh */
+.intro-bg {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.intro-bg-orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(90px); opacity: 0;
+  animation: orbAppear 1.2s ease forwards;
+}
+.intro-bg-orb-1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(59,130,246,0.35), transparent 70%);
+  top: -200px; left: -150px; animation-delay: 0.2s;
+}
+.intro-bg-orb-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(139,92,246,0.3), transparent 70%);
+  bottom: -150px; right: -100px; animation-delay: 0.5s;
+}
+.intro-bg-orb-3 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(6,182,212,0.25), transparent 70%);
+  top: 30%; left: 40%; animation-delay: 0.8s;
+}
+@keyframes orbAppear {
+  to { opacity: 1; }
+}
+
+/* Floating grid lines */
+.intro-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridFadeIn 1.5s ease 0.3s both;
+}
+@keyframes gridFadeIn {
+  from { opacity:0; } to { opacity:1; }
+}
+
+/* Floating health icons */
+.intro-icon {
+  position: absolute;
+  font-size: 28px;
+  opacity: 0;
+  user-select: none;
+  pointer-events: none;
+  animation: iconFloat linear infinite, iconFadeIn 0.6s ease forwards;
+  filter: drop-shadow(0 0 10px rgba(59,130,246,0.5));
+}
+@keyframes iconFloat {
+  0%   { transform: translateY(0px) rotate(0deg); }
+  25%  { transform: translateY(-18px) rotate(5deg); }
+  50%  { transform: translateY(-4px) rotate(-3deg); }
+  75%  { transform: translateY(-22px) rotate(4deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+@keyframes iconFadeIn {
+  from { opacity: 0; transform: scale(0.5) translateY(20px); }
+  to   { opacity: 0.85; transform: scale(1) translateY(0); }
+}
+
+/* Intro center content */
+.intro-center {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0;
+  text-align: center;
+}
+
+/* Animated logo */
+.intro-logo-wrap {
+  position: relative; margin-bottom: 28px;
+  opacity: 0; animation: introLogoIn 0.8s cubic-bezier(.34,1.56,.64,1) 0.5s both;
+}
+@keyframes introLogoIn {
+  from { opacity:0; transform: scale(0.3) rotate(-20deg); }
+  to   { opacity:1; transform: scale(1) rotate(0deg); }
+}
+.intro-logo-ring {
+  position: absolute; inset: -12px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(59,130,246,0.6);
+  border-right-color: rgba(6,182,212,0.4);
+  animation: spin 2.5s linear infinite;
+}
+.intro-logo-ring-2 {
+  position: absolute; inset: -22px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-bottom-color: rgba(139,92,246,0.4);
+  border-left-color: rgba(59,130,246,0.2);
+  animation: spin 4s linear infinite reverse;
+}
+.intro-logo-icon {
+  width: 90px; height: 90px; border-radius: 28px;
+  background: linear-gradient(135deg, #1d4ed8, #0891b2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px;
+  box-shadow:
+    0 0 0 1px rgba(59,130,246,0.3),
+    0 0 30px rgba(59,130,246,0.4),
+    0 0 60px rgba(6,182,212,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  position: relative; z-index: 2;
+  animation: logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%,100% { box-shadow: 0 0 0 1px rgba(59,130,246,0.3), 0 0 30px rgba(59,130,246,0.4), 0 0 60px rgba(6,182,212,0.2), inset 0 1px 0 rgba(255,255,255,0.15); }
+  50%     { box-shadow: 0 0 0 1px rgba(59,130,246,0.5), 0 0 50px rgba(59,130,246,0.6), 0 0 90px rgba(6,182,212,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
+}
+
+/* Intro title with character-by-character animation */
+.intro-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(28px, 5vw, 46px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  opacity: 0;
+  animation: introTitleIn 0.7s ease 1.1s both;
+}
+@keyframes introTitleIn {
+  from { opacity:0; transform: translateY(24px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.intro-title-gradient {
+  background: linear-gradient(135deg, #fff 30%, #60a5fa 60%, #22d3ee 90%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.intro-subtitle {
+  font-size: clamp(13px, 2.5vw, 16px);
+  color: rgba(148,163,184,0.8);
+  letter-spacing: 0.3px;
+  margin-bottom: 50px;
+  opacity: 0;
+  animation: introTitleIn 0.7s ease 1.3s both;
+}
+
+/* Health feature pills */
+.intro-pills {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 10px; margin-bottom: 48px;
+  opacity: 0; animation: introTitleIn 0.7s ease 1.5s both;
+}
+.intro-pill {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: 99px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  animation: pillBounceIn 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.intro-pill:hover {
+  background: rgba(59,130,246,0.15);
+  border-color: rgba(59,130,246,0.35);
+  color: #fff;
+  transform: translateY(-2px);
+}
+.intro-pill span:first-child { font-size: 16px; }
+
+/* Enter button */
+.intro-enter-btn {
+  padding: 16px 48px; border-radius: 99px; border: none;
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  color: #fff; font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: 0.3px;
+  cursor: pointer; position: relative; overflow: hidden;
+  opacity: 0; animation: introTitleIn 0.7s ease 1.9s both;
+  box-shadow: 0 0 0 0 rgba(59,130,246,0.5);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.intro-enter-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  opacity: 0; transition: opacity 0.2s ease;
+}
+.intro-enter-btn:hover::before { opacity: 1; }
+.intro-enter-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 30px rgba(59,130,246,0.5), 0 0 60px rgba(6,182,212,0.2);
+}
+.intro-enter-btn:active { transform: scale(0.97); }
+.intro-enter-btn.pulsing {
+  animation: introTitleIn 0.7s ease 1.9s both, btnPulse 2s ease-in-out 2.6s infinite;
+}
+@keyframes btnPulse {
+  0%,100% { box-shadow: 0 8px 20px rgba(59,130,246,0.3); }
+  50%     { box-shadow: 0 8px 40px rgba(59,130,246,0.6), 0 0 60px rgba(6,182,212,0.25); }
+}
+
+/* Progress bar at bottom of intro */
+.intro-progress-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: rgba(255,255,255,0.05);
+}
+.intro-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan), var(--purple));
+  width: 0%;
+  border-radius: 0 99px 99px 0;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px rgba(59,130,246,0.6);
+}
+
+/* Scroll hint */
+.intro-scroll-hint {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  opacity: 0; animation: introTitleIn 0.6s ease 2.5s both;
+  color: rgba(255,255,255,0.25); font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; pointer-events: none;
+}
+.intro-scroll-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(59,130,246,0.5);
+  animation: dotPulse 1.4s ease infinite;
+}
+.intro-scroll-dot:nth-child(3){ animation-delay:0.2s; }
+.intro-scroll-dot:nth-child(4){ animation-delay:0.4s; }
+.intro-dots-row { display:flex; gap:6px; }
+
+/* Particle canvas for intro */
+#intro-canvas {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 1;
+}
+
+/* ============================================================
+   INTRO PHASE 2 — WELCOME / FORM
+============================================================ */
+.intro-welcome {
+  position: relative; z-index: 10;
+  width: 100%; max-width: 900px;
+  padding: 0 20px;
+}
+.intro-welcome-inner {
+  display: flex; align-items: center; justify-content: center;
+  gap: 50px; flex-wrap: wrap;
+}
+
+/* ---- Cartoon Health Assistant ---- */
+.intro-assistant {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  animation: assistantEntry 0.8s cubic-bezier(.34,1.56,.64,1) 0.1s both;
+  flex-shrink: 0;
+}
+@keyframes assistantEntry {
+  from { opacity:0; transform: translateX(-40px) scale(0.8); }
+  to   { opacity:1; transform: translateX(0) scale(1); }
+}
+.intro-assistant-bubble {
+  position: relative;
+  background: rgba(255,255,255,0.95);
+  color: #1e293b;
+  padding: 12px 18px;
+  border-radius: 18px 18px 18px 4px;
+  font-size: 13px; font-weight: 600;
+  max-width: 220px; text-align: center;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  animation: bubbleBounce 0.5s cubic-bezier(.34,1.56,.64,1) 0.5s both;
+  line-height: 1.5;
+}
+@keyframes bubbleBounce {
+  from { opacity:0; transform: scale(0.7) translateY(10px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.bubble-tail {
+  position: absolute; bottom: -10px; left: 22px;
+  width: 0; height: 0;
+  border-left: 10px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 10px solid rgba(255,255,255,0.95);
+}
+
+/* Cartoon body */
+.intro-assistant-body {
+  position: relative;
+  animation: assistantBob 3s ease-in-out infinite;
+}
+@keyframes assistantBob {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-8px); }
+}
+.assistant-head {
+  width: 70px; height: 70px; border-radius: 50%;
+  background: linear-gradient(135deg, #fde68a, #fbbf24);
+  margin: 0 auto;
+  position: relative; z-index: 2;
+  box-shadow: 0 4px 16px rgba(251,191,36,0.4);
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.assistant-face {
+  position: absolute; inset: 8px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+}
+.assistant-eyes { display: flex; gap: 12px; }
+.assistant-eye {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #1e293b;
+  display: flex; align-items: center; justify-content: center;
+  animation: blink 4s ease infinite;
+}
+@keyframes blink {
+  0%,96%,100% { transform: scaleY(1); }
+  98%          { transform: scaleY(0.1); }
+}
+.assistant-pupil {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #fff; margin-top: -3px; margin-left: 2px;
+}
+.assistant-smile {
+  width: 24px; height: 12px;
+  border-bottom: 3px solid #1e293b;
+  border-radius: 0 0 12px 12px;
+}
+.assistant-ear {
+  position: absolute; top: 20px;
+  width: 14px; height: 18px; border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.assistant-ear.left  { left: -6px; }
+.assistant-ear.right { right: -6px; }
+
+.assistant-torso {
+  width: 54px; height: 60px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  border-radius: 14px 14px 10px 10px;
+  margin: -4px auto 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.4);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.assistant-cross { font-size: 22px; color: rgba(255,255,255,0.9); font-weight: 700; }
+
+.assistant-arms { display: flex; justify-content: space-between; width: 80px; margin: -40px auto 0; position: relative; z-index: 0; }
+.assistant-arm {
+  width: 16px; height: 44px; border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.assistant-arm.left  { border-radius: 8px 4px 4px 8px; animation: armWave 2s ease-in-out infinite; transform-origin: top center; }
+.assistant-arm.right { border-radius: 4px 8px 8px 4px; animation: armWave 2s ease-in-out 0.3s infinite reverse; transform-origin: top center; }
+@keyframes armWave {
+  0%,100% { transform: rotate(0deg); }
+  50%     { transform: rotate(12deg); }
+}
+
+.assistant-legs { display: flex; justify-content: center; gap: 6px; margin-top: -2px; }
+.assistant-leg {
+  width: 16px; height: 32px; border-radius: 0 0 8px 8px;
+  background: linear-gradient(180deg, #1d4ed8, #1e40af);
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.assistant-shadow {
+  width: 60px; height: 12px; border-radius: 50%;
+  background: rgba(0,0,0,0.25); filter: blur(6px);
+  margin: 6px auto 0;
+}
+
+/* Floating items around assistant */
+.assistant-float-item {
+  position: absolute;
+  font-size: 18px;
+  pointer-events: none;
+  animation: assistantItemFloat linear infinite;
+  opacity: 0.85;
+}
+.a1 { top: 20px;  left: -28px; animation-duration: 2.8s; animation-delay: 0.2s; }
+.a2 { top: 10px;  right: -24px; animation-duration: 3.2s; animation-delay: 0.8s; }
+.a3 { bottom: 50px; right: -20px; animation-duration: 2.5s; animation-delay: 1.4s; }
+@keyframes assistantItemFloat {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%     { transform: translateY(-12px) rotate(15deg); }
+}
+
+/* ---- Welcome Form Card ---- */
+.intro-form-card {
+  background: rgba(13,21,38,0.88);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 28px;
+  padding: 38px 36px 30px;
+  width: min(400px, 92vw);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 24px 60px rgba(0,0,0,0.6),
+    0 0 80px rgba(59,130,246,0.08);
+  animation: formCardEntry 0.7s cubic-bezier(.34,1.56,.64,1) 0.2s both;
+  position: relative; overflow: hidden;
+}
+.intro-form-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,0.5), rgba(6,182,212,0.5), transparent);
+}
+.intro-form-card::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 60%);
+}
+@keyframes formCardEntry {
+  from { opacity:0; transform: translateX(40px) scale(0.9); }
+  to   { opacity:1; transform: translateX(0) scale(1); }
+}
+
+.intro-form-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.15));
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #60a5fa;
+  padding: 5px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  margin-bottom: 18px;
+}
+.intro-form-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px; font-weight: 700;
+  color: #f0f6ff; line-height: 1.2; margin-bottom: 8px;
+}
+.intro-form-sub {
+  font-size: 13.5px; color: #64748b; line-height: 1.6; margin-bottom: 24px;
+}
+
+.intro-name-wrap {
+  position: relative; margin-bottom: 22px;
+}
+.intro-name-icon {
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; z-index: 2; pointer-events: none;
+}
+.intro-name-input {
+  width: 100%; padding: 15px 16px 15px 48px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  color: #f0f6ff;
+  font-family: 'DM Sans', sans-serif; font-size: 16px;
+  outline: none; transition: all 0.25s ease;
+  position: relative; z-index: 1;
+}
+.intro-name-input::placeholder { color: #334155; }
+.intro-name-input:focus {
+  border-color: rgba(59,130,246,0.5);
+  background: rgba(59,130,246,0.08);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15), 0 0 20px rgba(59,130,246,0.1);
+}
+.intro-name-glow {
+  position: absolute; inset: 0; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(6,182,212,0.05));
+  opacity: 0; transition: opacity 0.25s ease; pointer-events: none; z-index: 0;
+}
+.intro-name-input:focus ~ .intro-name-glow { opacity: 1; }
+
+.intro-form-features {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 26px;
+}
+.iff-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 11px; border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  font-size: 12px; font-weight: 500; color: #64748b;
+  transition: all 0.2s ease;
+}
+.iff-item:hover { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); color: #94a3b8; }
+.iff-item span { font-size: 14px; }
+
+.intro-launch-btn {
+  width: 100%; padding: 15px 24px;
+  border-radius: 14px; border: none;
+  background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.intro-launch-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0; transition: opacity 0.2s ease;
+}
+.intro-launch-btn:hover::after { opacity: 1; }
+.intro-launch-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(37,99,235,0.5), 0 0 60px rgba(6,182,212,0.2);
+}
+.intro-launch-btn:active { transform: scale(0.98); }
+.ilb-text { position: relative; z-index: 1; }
+.ilb-arrow { font-size: 18px; position: relative; z-index: 1; transition: transform 0.2s ease; }
+.intro-launch-btn:hover .ilb-arrow { transform: translateX(4px) scale(1.2); }
+.ilb-ripple {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.5); top: 50%; left: 50%;
+  transform: translate(-50%,-50%) scale(0); pointer-events: none;
+  transition: transform 0.6s ease, opacity 0.6s ease; opacity: 0;
+}
+.intro-launch-btn:active .ilb-ripple { transform: translate(-50%,-50%) scale(40); opacity: 0; }
+
+.intro-form-note {
+  text-align: center; margin-top: 14px;
+  font-size: 11.5px; color: #334155;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.intro-form-note::before { content: '🔒'; font-size: 11px; }
+
+/* ---- Transition overlay ---- */
+#intro-transition {
+  position: fixed; inset: 0; z-index: 3000;
+  pointer-events: none; opacity: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+}
+#intro-transition.running {
+  pointer-events: all;
+  animation: transitionIn 1.4s cubic-bezier(.76,0,.24,1) forwards;
+}
+@keyframes transitionIn {
+  0%   { opacity:0; background: transparent; }
+  20%  { opacity:1; background: #050a14; }
+  80%  { opacity:1; background: #050a14; }
+  100% { opacity:0; background: #050a14; }
+}
+.intro-trans-icon {
+  font-size: 52px;
+  animation: transIconPop 0.5s cubic-bezier(.34,1.56,.64,1) 0.2s both;
+  opacity: 0;
+}
+@keyframes transIconPop {
+  from { opacity:0; transform: scale(0.2) rotate(-30deg); }
+  to   { opacity:1; transform: scale(1) rotate(0deg); }
+}
+.intro-trans-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px; font-weight: 700; color: #fff;
+  opacity: 0;
+  animation: transTextIn 0.5s ease 0.4s both;
+}
+@keyframes transTextIn {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.intro-trans-bar-wrap {
+  width: 200px; height: 4px; border-radius: 99px;
+  background: rgba(255,255,255,0.1);
+  overflow: hidden; opacity: 0;
+  animation: transTextIn 0.4s ease 0.5s both;
+}
+.intro-trans-bar {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  border-radius: 99px;
+  animation: transBarFill 0.9s ease 0.6s both;
+  box-shadow: 0 0 10px rgba(59,130,246,0.8);
+}
+@keyframes transBarFill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+/* Mobile tweaks for intro */
+@media (max-width: 680px) {
+  .intro-welcome-inner { flex-direction: column; gap: 24px; }
+  .intro-assistant { transform: scale(0.85); transform-origin: bottom center; }
+  .intro-form-card { padding: 28px 22px 24px; }
+  .intro-form-title { font-size: 22px; }
+  .intro-pills { gap: 7px; }
+  .intro-pill { padding: 6px 12px; font-size: 12px; }
+  .intro-enter-btn { padding: 13px 36px; font-size: 15px; }
+  .intro-subtitle { margin-bottom: 32px; }
+}
+@media (max-width: 400px) {
+  .intro-form-features { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   BACKGROUND BLOBS
+============================================================ */
+.bg-blobs {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.12;
+  animation: blobFloat 12s ease-in-out infinite;
+}
+.blob-1 { width: 500px; height: 500px; background: var(--blue);   top: -150px; left: -100px; animation-delay: 0s; }
+.blob-2 { width: 400px; height: 400px; background: var(--purple); bottom: 10%; right: -80px; animation-delay: 4s; }
+.blob-3 { width: 300px; height: 300px; background: var(--cyan);   top: 40%; left: 30%; animation-delay: 8s; }
+@keyframes blobFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(20px,-30px) scale(1.06); }
+  66%     { transform: translate(-15px,15px) scale(0.96); }
+}
+[data-theme="light"] .blob { opacity: 0.07; }
+
+/* ============================================================
+   LOGIN SCREEN
+============================================================ */
+#login-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg-base);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+#login-screen.exiting { opacity:0; transform:scale(1.04); pointer-events:none; }
+
+.login-particles {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.login-particle {
+  position: absolute; border-radius: 50%;
+  animation: particleDrift linear infinite;
+  opacity: 0;
+}
+@keyframes particleDrift {
+  0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(-20px) scale(1); opacity: 0; }
+}
+
+.login-center {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 32px;
+}
+.login-brand {
+  display: flex; align-items: center; gap: 14px;
+  animation: fadeUp 0.6s var(--ease) 0.1s both;
+}
+.login-brand-icon {
+  width: 56px; height: 56px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; box-shadow: var(--glow-blue);
+}
+.login-brand-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px; font-weight: 700; color: var(--text-1);
+  letter-spacing: -0.5px;
+}
+.login-brand-tag { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+
+.login-box {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  width: min(420px, 92vw);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lg);
+  animation: loginBoxEntry 0.6s var(--spring) 0.2s both;
+}
+@keyframes loginBoxEntry {
+  from { opacity:0; transform:translateY(32px) scale(0.95); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.login-h { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--text-1); margin-bottom:6px; animation:fadeUp 0.5s var(--ease) 0.3s both; }
+.login-sub { font-size:14px; color:var(--text-2); margin-bottom:28px; animation:fadeUp 0.5s var(--ease) 0.4s both; }
+
+.input-wrap { position:relative; animation:fadeUp 0.5s var(--ease) 0.45s both; }
+.input-icon {
+  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  font-size:17px; pointer-events:none; z-index:2;
+}
+.login-input {
+  width:100%; padding:13px 16px 13px 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--text-1);
+  font-family:'DM Sans',sans-serif; font-size:15px;
+  outline: none; transition: all var(--t) var(--ease);
+  margin-bottom: 14px;
+}
+.login-input::placeholder { color: var(--text-3); }
+.login-input:focus {
+  border-color: var(--blue);
+  background: rgba(59,130,246,0.08);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.login-btn {
+  width:100%; padding:14px; border-radius:var(--radius-sm); border:none;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  color:#fff; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700;
+  cursor:pointer; transition:all var(--t) var(--ease);
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  animation:fadeUp 0.5s var(--ease) 0.55s both;
+  position:relative; overflow:hidden;
+}
+.login-btn::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);
+  opacity:0; transition:opacity var(--t) var(--ease);
+}
+.login-btn:hover:not(:disabled)::after { opacity:1; }
+.login-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 24px rgba(59,130,246,0.4); }
+.login-btn:active:not(:disabled) { transform:scale(0.98); }
+.login-btn:disabled { cursor:not-allowed; opacity:0.65; }
+.btn-spinner { width:18px;height:18px;border-radius:50%; border:2.5px solid rgba(255,255,255,0.3); border-top-color:#fff; animation:spin 0.7s linear infinite; flex-shrink:0; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Login loader overlay */
+#login-loader {
+  position:fixed; inset:0; z-index:1100;
+  background: var(--bg-base);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+  opacity:0; pointer-events:none; transition:opacity 0.3s var(--ease);
+}
+#login-loader.visible { opacity:1; pointer-events:all; }
+.loader-orbit {
+  position:relative; width:80px; height:80px;
+}
+.loader-core {
+  position:absolute; inset:0; margin:auto;
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  box-shadow:var(--glow-blue);
+  animation:corePulse 1.2s ease-in-out infinite;
+}
+@keyframes corePulse {
+  0%,100%{transform:scale(1);box-shadow:var(--glow-blue);}
+  50%{transform:scale(1.1);box-shadow:0 0 35px rgba(59,130,246,0.6);}
+}
+.loader-ring-orbit {
+  position:absolute; inset:0;
+  border:2px solid transparent;
+  border-top-color:var(--cyan);
+  border-right-color:var(--blue);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+.loader-ring-orbit-2 {
+  position:absolute; inset:8px;
+  border:1px solid transparent;
+  border-bottom-color:var(--purple);
+  border-radius:50%;
+  animation:spin 1.5s linear infinite reverse;
+}
+.loader-step-text {
+  font-size:15px; font-weight:600; color:var(--text-1);
+  animation:fadeUp 0.4s var(--ease) both; min-height:22px;
+  font-family:'Space Grotesk',sans-serif;
+}
+.loader-dots { display:flex; gap:7px; }
+.loader-dot {
+  width:7px;height:7px;border-radius:50%;
+  background:var(--text-3);
+  animation:dotPulse 1.3s ease infinite;
+}
+.loader-dot:nth-child(2){animation-delay:0.2s;}
+.loader-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dotPulse {
+  0%,80%,100%{background:var(--text-3);transform:scale(0.8);}
+  40%{background:var(--blue);transform:scale(1.3);}
+}
+
+/* ============================================================
+   APP SHELL
+============================================================ */
+#app { display:none; }
+#app.visible { display:flex; min-height:100vh; position:relative; z-index:1; }
+
+/* ============================================================
+   SIDEBAR
+============================================================ */
+.sidebar {
+  width:var(--sidebar-w); background:var(--bg-sidebar);
+  position:fixed; top:0; left:0; height:100vh;
+  display:flex; flex-direction:column;
+  z-index:200; transition:transform var(--t) var(--ease);
+  overflow-y:auto; overflow-x:hidden;
+  border-right:1px solid var(--glass-border);
+}
+[data-theme="light"] .sidebar { background: #1a2744; }
+
+.sidebar-brand {
+  padding:24px 20px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.brand-logo {
+  display:flex; align-items:center; gap:11px;
+}
+.brand-icon {
+  width:36px;height:36px;border-radius:11px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px; flex-shrink:0; box-shadow:var(--glow-blue);
+}
+.brand-name { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:#fff; }
+.brand-tag  { font-size:10px; color:rgba(255,255,255,0.35); margin-top:2px; letter-spacing:0.5px; text-transform:uppercase; }
+
+.sidebar-user {
+  padding:14px 16px;
+  display:flex; align-items:center; gap:10px;
+  margin:12px 12px 0;
+  border-radius:var(--radius-sm);
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.06);
+  cursor:pointer;
+  transition:background var(--t) var(--ease);
+}
+.sidebar-user:hover { background:rgba(255,255,255,0.07); }
+.avatar {
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;flex-shrink:0;
+  box-shadow:0 0 0 2px rgba(139,92,246,0.4);
+}
+.user-name { font-size:13px;font-weight:600;color:#fff;line-height:1.3; }
+.user-sub  { font-size:11px;color:rgba(255,255,255,0.35); }
+
+.nav { flex:1; padding:14px 10px; display:flex; flex-direction:column; gap:2px; }
+.nav-item {
+  display:flex; align-items:center; gap:11px;
+  padding:10px 12px;
+  border-radius:var(--radius-sm);
+  color:rgba(255,255,255,0.45);
+  font-size:13.5px; font-weight:500;
+  cursor:pointer; user-select:none;
+  transition:all var(--t) var(--ease);
+  position:relative;
+}
+.nav-item:hover { color:rgba(255,255,255,0.85); background:rgba(255,255,255,0.05); }
+.nav-item.active {
+  color:#fff;
+  background:linear-gradient(135deg,rgba(59,130,246,0.25),rgba(6,182,212,0.12));
+  border:1px solid rgba(59,130,246,0.25);
+}
+.nav-item.active::before {
+  content:'';
+  position:absolute; left:0; top:20%; bottom:20%;
+  width:3px; border-radius:0 3px 3px 0;
+  background:linear-gradient(180deg,var(--blue),var(--cyan));
+}
+.nav-icon-wrap {
+  width:28px;height:28px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px; flex-shrink:0;
+  background:rgba(255,255,255,0.05);
+  transition:all var(--t) var(--ease);
+}
+.nav-item.active .nav-icon-wrap { background:rgba(59,130,246,0.2); }
+.nav-item:hover .nav-icon-wrap { background:rgba(255,255,255,0.1); }
+
+.nav-section { font-size:10px; font-weight:600; color:rgba(255,255,255,0.2); text-transform:uppercase; letter-spacing:1px; padding:12px 12px 4px; }
+
+.sidebar-footer {
+  padding:12px;
+  border-top:1px solid rgba(255,255,255,0.07);
+}
+.dark-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 10px; border-radius:var(--radius-sm);
+  cursor:pointer;
+  transition:background var(--t) var(--ease);
+}
+.dark-toggle:hover { background:rgba(255,255,255,0.04); }
+.dark-toggle-label { font-size:12.5px; font-weight:500; color:rgba(255,255,255,0.5); display:flex;align-items:center;gap:8px; }
+.toggle-sw {
+  width:38px;height:21px;background:rgba(255,255,255,0.12);
+  border-radius:99px; cursor:pointer; position:relative;
+  transition:background var(--t) var(--ease);
+}
+.toggle-sw.on { background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.toggle-knob {
+  position:absolute; top:2.5px; left:2.5px; width:16px;height:16px;
+  border-radius:50%; background:#fff;
+  transition:transform var(--t) var(--spring);
+  box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle-sw.on .toggle-knob { transform:translateX(17px); }
+
+.reset-btn {
+  display:flex; align-items:center; gap:8px;
+  width:100%; padding:8px 10px; border-radius:var(--radius-sm);
+  border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.07);
+  color:rgba(248,113,113,0.8); font-family:'DM Sans',sans-serif; font-size:12.5px;
+  font-weight:500; cursor:pointer; transition:all var(--t) var(--ease);
+  margin-top:6px;
+}
+.reset-btn:hover { background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.4); color:#f87171; }
+
+/* ============================================================
+   MAIN CONTENT
+============================================================ */
+.main {
+  margin-left:var(--sidebar-w);
+  flex:1; display:flex; flex-direction:column;
+  min-height:100vh;
+}
+.topbar {
+  height:var(--header-h);
+  background:var(--bg-card);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; position:sticky; top:0; z-index:100;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  transition:background var(--t) var(--ease);
+}
+.topbar-left h1 {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:18px; font-weight:700;
+  background:linear-gradient(135deg,var(--text-1),var(--text-2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.topbar-left p { font-size:12px; color:var(--text-2); margin-top:1px; }
+.topbar-right { display:flex; align-items:center; gap:10px; }
+
+#datetime-display {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px; font-weight:500; color:var(--text-2);
+  background:var(--glass); border:1px solid var(--border);
+  padding:5px 11px; border-radius:99px;
+}
+.notif-btn {
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--border); background:var(--glass);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer; font-size:16px; transition:all var(--t) var(--ease);
+  position:relative;
+}
+.notif-btn:hover { background:var(--glass-hover); border-color:var(--blue); box-shadow:var(--glow-blue); }
+.notif-badge {
+  position:absolute; top:-4px; right:-4px;
+  min-width:17px;height:17px; background:var(--red);
+  border-radius:99px; font-size:9px; font-weight:700;
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  padding:0 4px;
+  box-shadow:0 0 8px rgba(239,68,68,0.6);
+  animation:badgePop 0.3s var(--spring) both;
+}
+@keyframes badgePop { from{transform:scale(0);}to{transform:scale(1);} }
+
+.hamburger {
+  display:none; background:none; border:none; color:var(--text-1);
+  font-size:20px; cursor:pointer; padding:4px; line-height:1;
+}
+.overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.6); z-index:150;
+  backdrop-filter:blur(4px);
+}
+
+.content { padding:26px 28px; flex:1; }
+
+/* ============================================================
+   PAGES
+============================================================ */
+.page { display:none; opacity:0; }
+.page.active {
+  display:block;
+  animation:pageEnter 0.35s var(--ease) both;
+}
+.page.exiting {
+  display:block !important;
+  animation:pageExit 0.2s var(--ease) both;
+  pointer-events:none;
+}
+@keyframes pageEnter {
+  from { opacity:0; transform:translateX(16px) translateY(4px); }
+  to   { opacity:1; transform:translateX(0) translateY(0); }
+}
+@keyframes pageExit {
+  from { opacity:1; transform:translateX(0) scale(1); }
+  to   { opacity:0; transform:translateX(-10px) scale(0.99); }
+}
+.page.active > * {
+  animation:childEnter 0.4s var(--ease) both;
+}
+.page.active > *:nth-child(2){animation-delay:0.05s;}
+.page.active > *:nth-child(3){animation-delay:0.1s;}
+.page.active > *:nth-child(4){animation-delay:0.15s;}
+.page.active > *:nth-child(5){animation-delay:0.2s;}
+@keyframes childEnter {
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ============================================================
+   CARDS
+============================================================ */
+.card {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px 24px;
+  box-shadow:var(--shadow-sm);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  transition:all var(--t) var(--ease);
+  position:relative; overflow:hidden;
+}
+.card:hover { box-shadow:var(--shadow-md); border-color:rgba(255,255,255,0.12); }
+.card-title {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px; font-weight:600;
+  color:var(--text-1); margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
+}
+.card-title .ctitle-icon {
+  width:26px;height:26px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+}
+
+/* ============================================================
+   GRIDS
+============================================================ */
+.grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; }
+.grid-3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+.grid-4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
+
+/* ============================================================
+   STAT CARDS
+============================================================ */
+.stat-card {
+  border-radius:var(--radius);
+  padding:20px 22px;
+  display:flex; flex-direction:column; gap:10px;
+  position:relative; overflow:hidden;
+  cursor:default;
+  transition:transform var(--t) var(--ease), box-shadow var(--t) var(--ease);
+  border:1px solid var(--glass-border);
+}
+.stat-card::before {
+  content:'';
+  position:absolute; inset:0;
+  background:inherit;
+  opacity:0; transition:opacity var(--t) var(--ease);
+}
+.stat-card:hover { transform:translateY(-4px); }
+.stat-card-inner { display:flex; align-items:flex-start; justify-content:space-between; }
+.stat-icon-wrap {
+  width:42px;height:42px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  flex-shrink:0;
+}
+.stat-trend {
+  font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;
+}
+.stat-label { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px; opacity:0.6; }
+.stat-value { font-family:'Space Grotesk',sans-serif; font-size:30px;font-weight:700;line-height:1; }
+.stat-value span { font-size:15px;font-weight:500; }
+.stat-sub { font-size:12px; opacity:0.65; }
+.stat-prog { height:3px; border-radius:99px; background:rgba(255,255,255,0.15); overflow:hidden; margin-top:4px; }
+.stat-prog-fill { height:100%; border-radius:99px; transition:width 1s var(--ease); }
+
+.stat-card.blue   { background:linear-gradient(135deg,#1e3a5f 0%,#1a3050 100%); color:#bfdbfe; box-shadow:0 4px 20px rgba(30,58,95,0.8); }
+.stat-card.cyan   { background:linear-gradient(135deg,#0e3a44 0%,#0b2f38 100%); color:#a5f3fc; box-shadow:0 4px 20px rgba(14,58,68,0.8); }
+.stat-card.purple { background:linear-gradient(135deg,#2e1a5f 0%,#261550 100%); color:#ddd6fe; box-shadow:0 4px 20px rgba(46,26,95,0.8); }
+.stat-card.amber  { background:linear-gradient(135deg,#44290a 0%,#3a2108 100%); color:#fde68a; box-shadow:0 4px 20px rgba(68,41,10,0.8); }
+.stat-card.blue:hover   { box-shadow:0 8px 30px rgba(59,130,246,0.3),0 4px 20px rgba(30,58,95,0.8); }
+.stat-card.cyan:hover   { box-shadow:0 8px 30px rgba(6,182,212,0.3),0 4px 20px rgba(14,58,68,0.8); }
+.stat-card.purple:hover { box-shadow:0 8px 30px rgba(139,92,246,0.3),0 4px 20px rgba(46,26,95,0.8); }
+.stat-card.amber:hover  { box-shadow:0 8px 30px rgba(245,158,11,0.3),0 4px 20px rgba(68,41,10,0.8); }
+.stat-card.blue   .stat-icon-wrap { background:rgba(59,130,246,0.2); }
+.stat-card.cyan   .stat-icon-wrap { background:rgba(6,182,212,0.2); }
+.stat-card.purple .stat-icon-wrap { background:rgba(139,92,246,0.2); }
+.stat-card.amber  .stat-icon-wrap { background:rgba(245,158,11,0.2); }
+.stat-card.blue   .stat-prog-fill { background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.stat-card.cyan   .stat-prog-fill { background:linear-gradient(90deg,var(--cyan),var(--blue-l)); }
+.stat-card.purple .stat-prog-fill { background:linear-gradient(90deg,var(--purple),var(--purple-l)); }
+.stat-card.amber  .stat-prog-fill { background:linear-gradient(90deg,var(--amber),var(--amber-l)); }
+
+[data-theme="light"] .stat-card.blue   { background:linear-gradient(135deg,#dbeafe,#bfdbfe); color:#1e3a8a; }
+[data-theme="light"] .stat-card.cyan   { background:linear-gradient(135deg,#cffafe,#a5f3fc); color:#164e63; }
+[data-theme="light"] .stat-card.purple { background:linear-gradient(135deg,#ede9fe,#ddd6fe); color:#3b0764; }
+[data-theme="light"] .stat-card.amber  { background:linear-gradient(135deg,#fef3c7,#fde68a); color:#78350f; }
+
+/* ============================================================
+   HEALTH SCORE RING
+============================================================ */
+.score-ring-wrap {
+  display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px 0;
+}
+.score-ring {
+  position:relative; width:150px;height:150px;
+}
+.score-ring svg { transform:rotate(-90deg); filter:drop-shadow(0 0 12px rgba(59,130,246,0.3)); }
+.score-ring-bg { fill:none; stroke:var(--border); stroke-width:10; }
+.score-ring-fill {
+  fill:none; stroke-width:10; stroke-linecap:round;
+  stroke-dasharray:397; stroke-dashoffset:397;
+  transition:stroke-dashoffset 1.4s var(--ease);
+  filter:drop-shadow(0 0 6px currentColor);
+}
+.score-ring-inner-fill {
+  fill:none; stroke-width:3; stroke-linecap:round;
+  stroke-dasharray:365; stroke-dashoffset:365;
+  transition:stroke-dashoffset 1.4s var(--ease) 0.2s;
+  opacity:0.3;
+}
+.score-num {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px;
+}
+.score-num-val {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:36px;font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--text-1),var(--blue-l));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.score-num-sub { font-size:11px;color:var(--text-3); }
+.score-label {
+  font-size:13px;font-weight:600;color:var(--text-2);
+  background:var(--glass);border:1px solid var(--border);
+  padding:5px 14px;border-radius:99px;
+}
+
+/* ============================================================
+   PROGRESS BARS
+============================================================ */
+.prog-wrap { margin:10px 0; }
+.prog-label {
+  display:flex;justify-content:space-between;
+  font-size:12px;font-weight:600;margin-bottom:7px;
+  color:var(--text-2);
+}
+.prog-label span:last-child { color:var(--text-1); font-family:'Space Grotesk',sans-serif; }
+.prog-bar {
+  height:7px;background:var(--glass);border-radius:99px;overflow:hidden;
+  border:1px solid var(--border);
+}
+.prog-fill {
+  height:100%;border-radius:99px;
+  transition:width 1s var(--ease);
+  position:relative;overflow:hidden;
+}
+.prog-fill::after {
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+  transform:translateX(-100%);
+  animation:shimmer 2.5s ease infinite;
+}
+@keyframes shimmer {
+  to{transform:translateX(100%);}
+}
+.prog-fill.blue   { background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.prog-fill.green  { background:linear-gradient(90deg,var(--green),var(--green-l)); }
+.prog-fill.purple { background:linear-gradient(90deg,var(--purple),var(--purple-l)); }
+.prog-fill.amber  { background:linear-gradient(90deg,var(--amber),var(--amber-l)); }
+
+/* ============================================================
+   WATER TRACKER
+============================================================ */
+.water-big-num {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:56px;font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-align:center;
+}
+.glass-grid { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.glass-item {
+  width:44px;height:44px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;
+  transition:all var(--t) var(--spring); opacity:0.3;
+  background:var(--glass);
+}
+.glass-item:hover { opacity:0.7; transform:scale(1.1); }
+.glass-item.filled {
+  opacity:1;
+  background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(6,182,212,0.2));
+  border-color:rgba(59,130,246,0.4);
+  box-shadow:0 0 10px rgba(59,130,246,0.2);
+  transform:scale(1.05);
+}
+.glass-item.filled:hover { transform:scale(1.12); }
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+.action-btn {
+  padding:10px 18px;border-radius:var(--radius-sm); border:none;
+  font-family:'DM Sans',sans-serif; font-size:13.5px;font-weight:600;
+  cursor:pointer; transition:all var(--t) var(--ease);
+  display:inline-flex;align-items:center;gap:7px;
+}
+.btn-primary {
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  color:#fff;
+  box-shadow:0 4px 14px rgba(59,130,246,0.3);
+}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(59,130,246,0.45); }
+.btn-green {
+  background:linear-gradient(135deg,var(--green),var(--green-l));
+  color:#fff;
+  box-shadow:0 4px 14px rgba(16,185,129,0.3);
+}
+.btn-green:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(16,185,129,0.45); }
+.btn-danger {
+  background:linear-gradient(135deg,var(--red),#f87171);
+  color:#fff;
+}
+.btn-danger:hover { transform:translateY(-1px); }
+.btn-ghost {
+  background:var(--glass); color:var(--text-2);
+  border:1px solid var(--border);
+}
+.btn-ghost:hover { background:var(--glass-hover); color:var(--text-1); border-color:rgba(255,255,255,0.15); }
+
+/* ============================================================
+   REMINDER FORM & ITEMS
+============================================================ */
+.reminder-form {
+  background:var(--glass); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:18px; margin-bottom:18px;
+  display:grid; gap:12px; grid-template-columns:1fr 1fr auto;
+}
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-label { font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.6px; }
+.form-input, .form-select {
+  padding:10px 13px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--glass);
+  color:var(--text-1); font-family:'DM Sans',sans-serif; font-size:13.5px;
+  outline:none; transition:all var(--t) var(--ease); width:100%;
+}
+.form-input:focus, .form-select:focus {
+  border-color:var(--blue);
+  background:rgba(59,130,246,0.07);
+  box-shadow:0 0 0 3px rgba(59,130,246,0.12);
+}
+.form-input::placeholder { color:var(--text-3); }
+.form-select option { background:var(--bg-card-solid); color:var(--text-1); }
+
+.reminder-list { display:flex;flex-direction:column;gap:8px; }
+.reminder-item {
+  display:flex; align-items:center; gap:11px;
+  padding:13px 15px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--glass);
+  transition:all var(--t) var(--ease);
+}
+.reminder-item:hover { border-color:rgba(255,255,255,0.12); background:var(--glass-hover); }
+.reminder-item.done { opacity:0.45; }
+.reminder-item.done .ri-title { text-decoration:line-through; }
+.ri-cat {
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px; flex-shrink:0;
+  background:var(--glass); border:1px solid var(--border);
+}
+.ri-body { flex:1; min-width:0; }
+.ri-title { font-size:13.5px;font-weight:600;color:var(--text-1); }
+.ri-time  { font-size:11.5px;color:var(--text-2);margin-top:2px; }
+.ri-check {
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid var(--border); cursor:pointer; flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  transition:all var(--t) var(--ease);
+}
+.ri-check:hover { border-color:var(--green); background:rgba(16,185,129,0.15); }
+.reminder-item.done .ri-check { background:var(--green); border-color:var(--green); color:#fff; }
+.ri-del {
+  width:26px;height:26px;border-radius:50%;
+  border:none; background:none; cursor:pointer; color:var(--text-3);
+  font-size:13px; transition:all var(--t) var(--ease); flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.ri-del:hover { color:var(--red); background:rgba(239,68,68,0.1); }
+
+/* ============================================================
+   MEDICINE TRACKER
+============================================================ */
+.med-item {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 15px;border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--glass);
+  margin-bottom:8px; transition:all var(--t) var(--ease);
+}
+.med-item:hover { border-color:rgba(255,255,255,0.12); }
+.med-item.taken { opacity:0.4; }
+.med-info { flex:1; }
+.med-name { font-size:13.5px;font-weight:600;color:var(--text-1); }
+.med-dose { font-size:11.5px;color:var(--text-2);margin-top:2px; }
+.med-time-tag {
+  font-size:11px;font-weight:700;padding:3px 9px;
+  border-radius:99px;
+  background:rgba(59,130,246,0.15);
+  color:var(--blue-l); margin-right:8px;
+  border:1px solid rgba(59,130,246,0.2);
+  font-family:'Space Grotesk',sans-serif;
+}
+
+/* ============================================================
+   SLEEP TRACKER
+============================================================ */
+.sleep-status {
+  display:inline-block;padding:4px 14px;border-radius:99px;
+  font-size:12px;font-weight:700;margin-left:10px;
+}
+.sleep-good   { background:rgba(16,185,129,0.15); color:var(--green-l); border:1px solid rgba(16,185,129,0.25); }
+.sleep-avg    { background:rgba(245,158,11,0.15);  color:var(--amber-l); border:1px solid rgba(245,158,11,0.25); }
+.sleep-poor   { background:rgba(239,68,68,0.15);   color:#f87171;        border:1px solid rgba(239,68,68,0.25); }
+.sleep-icon { font-size:68px; text-align:center; padding:14px; display:block; filter:drop-shadow(0 4px 12px rgba(139,92,246,0.3)); }
+.range-input {
+  width:100%; margin:14px 0 8px;
+  -webkit-appearance:none; appearance:none;
+  height:5px; border-radius:99px;
+  background:linear-gradient(90deg,var(--purple),var(--purple-l),rgba(255,255,255,0.1));
+  outline:none; cursor:pointer;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--purple-l));
+  cursor:pointer; box-shadow:0 0 10px rgba(139,92,246,0.5);
+  transition:transform var(--t) var(--ease);
+}
+.range-input::-webkit-slider-thumb:hover { transform:scale(1.2); }
+
+/* ============================================================
+   EXERCISE BARS
+============================================================ */
+.exercise-bars {
+  display:flex; align-items:flex-end; gap:8px; height:90px; margin:18px 0;
+}
+.ex-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.ex-bar {
+  width:100%; background:linear-gradient(180deg,var(--purple),rgba(139,92,246,0.4));
+  border-radius:4px 4px 0 0;
+  transition:height 0.7s var(--ease); min-height:4px;
+  position:relative;overflow:hidden;
+}
+.ex-bar::after {
+  content:''; position:absolute; top:0;left:0;right:0; height:40%;
+  background:linear-gradient(180deg,rgba(255,255,255,0.2),transparent);
+  border-radius:4px 4px 0 0;
+}
+.today-bar { background:linear-gradient(180deg,var(--blue),rgba(59,130,246,0.4)) !important; }
+.ex-day { font-size:10px;color:var(--text-3);font-weight:600; }
+.ex-min { font-size:9px;color:var(--text-3); font-family:'Space Grotesk',sans-serif; }
+
+/* ============================================================
+   ANALYTICS CHARTS
+============================================================ */
+.chart-week { display:flex; flex-direction:column; gap:10px; }
+.chart-row { display:flex; align-items:center; gap:10px; }
+.chart-label { font-size:11.5px;font-weight:600;color:var(--text-2); width:28px; text-align:right; flex-shrink:0; font-family:'Space Grotesk',sans-serif; }
+.chart-track { flex:1; height:12px; background:var(--glass); border-radius:99px; overflow:hidden; border:1px solid var(--border); }
+.chart-fill { height:100%;border-radius:99px; transition:width 0.9s var(--ease); position:relative;overflow:hidden; }
+.chart-fill::after { content:''; position:absolute;inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent); transform:translateX(-100%); animation:shimmer 3s ease infinite; }
+.chart-fill.blue   { background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.chart-fill.purple { background:linear-gradient(90deg,var(--purple),var(--purple-l)); }
+.chart-fill.amber  { background:linear-gradient(90deg,var(--amber),var(--amber-l)); }
+.chart-fill.green  { background:linear-gradient(90deg,var(--green),var(--green-l)); }
+.chart-num { font-size:11.5px;color:var(--text-2); width:24px; flex-shrink:0; font-family:'Space Grotesk',sans-serif; }
+
+/* ============================================================
+   TIPS
+============================================================ */
+.tip-card {
+  background:linear-gradient(135deg,#0d1f3c,#0a152d);
+  border:1px solid rgba(59,130,246,0.2);
+  border-radius:var(--radius); padding:26px;
+  color:#fff; position:relative; overflow:hidden;
+}
+.tip-card::before {
+  content:'"'; position:absolute; top:-20px; right:20px;
+  font-size:160px; font-family:'Space Grotesk',sans-serif;
+  opacity:0.04; line-height:1;
+}
+.tip-card::after {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at 80% 20%,rgba(59,130,246,0.08),transparent 60%);
+}
+[data-theme="light"] .tip-card { background:linear-gradient(135deg,#1e3a5f,#1a2e44); }
+.tip-cat {
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+  opacity:0.5;margin-bottom:10px;
+  position:relative;z-index:1;
+}
+.tip-text { font-size:16px;line-height:1.65;font-weight:400; position:relative;z-index:1; }
+.tip-btn {
+  margin-top:18px; padding:8px 18px; border-radius:var(--radius-sm);
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
+  color:#fff; font-family:'DM Sans',sans-serif; font-size:12.5px;
+  font-weight:600; cursor:pointer; transition:all var(--t) var(--ease);
+  position:relative;z-index:1;
+}
+.tip-btn:hover { background:rgba(255,255,255,0.18); border-color:rgba(255,255,255,0.25); transform:translateY(-1px); }
+
+/* ============================================================
+   SECTION TITLE
+============================================================ */
+.section-title {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;font-weight:700;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:1.2px;
+  margin:26px 0 14px; display:flex;align-items:center;gap:8px;
+}
+.section-title::after {
+  content:''; flex:1; height:1px; background:var(--border);
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+#toast-container {
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  display:flex;flex-direction:column;gap:10px;
+}
+.toast {
+  padding:12px 18px; border-radius:var(--radius-sm);
+  background:var(--bg-card-solid);
+  border:1px solid var(--border);
+  color:var(--text-1);
+  font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadow-lg);
+  animation:toastIn 0.3s var(--spring) both;
+  max-width:320px; min-width:200px;
+  backdrop-filter:blur(16px);
+  display:flex;align-items:center;gap:10px;
+}
+.toast::before { content:''; width:3px; align-self:stretch; border-radius:99px; flex-shrink:0; background:var(--text-3); }
+.toast.success::before { background:linear-gradient(180deg,var(--green),var(--green-l)); }
+.toast.error::before   { background:linear-gradient(180deg,var(--red),#f87171); }
+.toast.success { border-color:rgba(16,185,129,0.2); }
+.toast.error   { border-color:rgba(239,68,68,0.2); }
+@keyframes toastIn {
+  from{opacity:0;transform:translateX(100%) scale(0.9);}
+  to{opacity:1;transform:translateX(0) scale(1);}
+}
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.empty {
+  text-align:center; padding:36px 24px; color:var(--text-3);
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+}
+.empty-icon { font-size:38px; opacity:0.5; }
+.empty-text { font-size:13px; }
+
+/* ============================================================
+   MODAL
+============================================================ */
+.modal-backdrop {
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,0.7);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.2s var(--ease);
+  backdrop-filter:blur(6px);
+}
+.modal-backdrop.open { opacity:1;pointer-events:all; }
+.modal-box {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:36px 32px 28px;
+  width:min(420px,90vw);text-align:center;
+  box-shadow:var(--shadow-lg);
+  transform:scale(0.9) translateY(16px);
+  transition:transform 0.28s var(--spring), opacity 0.2s var(--ease);
+  opacity:0;
+  backdrop-filter:blur(20px);
+}
+.modal-backdrop.open .modal-box { transform:scale(1) translateY(0); opacity:1; }
+.modal-icon  { font-size:52px;margin-bottom:14px;display:block;animation:shake 0.5s var(--ease) 0.2s both; }
+.modal-title { font-family:'Space Grotesk',sans-serif; font-size:20px;font-weight:700;margin-bottom:10px; }
+.modal-body  { font-size:14px;color:var(--text-2);line-height:1.6;margin-bottom:8px; }
+.modal-warn  {
+  background:rgba(239,68,68,0.1);color:#f87171;
+  border:1px solid rgba(239,68,68,0.2);
+  border-radius:var(--radius-sm);padding:10px 14px;
+  font-size:13px;font-weight:600;margin:14px 0 22px;
+}
+.modal-actions { display:flex;gap:10px; }
+.modal-actions > * { flex:1; }
+.modal-confirm {
+  padding:12px;border-radius:var(--radius-sm);border:none;
+  background:linear-gradient(135deg,var(--red),#f87171);
+  color:#fff; font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;transition:all var(--t) var(--ease);
+}
+.modal-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(239,68,68,0.4); }
+.modal-cancel {
+  padding:12px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--glass);
+  color:var(--text-1); font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:600;cursor:pointer;transition:all var(--t) var(--ease);
+}
+.modal-cancel:hover { background:var(--glass-hover); }
+
+/* ============================================================
+   BADGES
+============================================================ */
+.badge {
+  font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;
+  display:inline-flex;align-items:center;
+}
+.badge-blue   { background:rgba(59,130,246,0.15); color:var(--blue-l); border:1px solid rgba(59,130,246,0.2); }
+.badge-green  { background:rgba(16,185,129,0.15); color:var(--green-l); border:1px solid rgba(16,185,129,0.2); }
+.badge-amber  { background:rgba(245,158,11,0.15); color:var(--amber-l); border:1px solid rgba(245,158,11,0.2); }
+.badge-purple { background:rgba(139,92,246,0.15); color:var(--purple-l); border:1px solid rgba(139,92,246,0.2); }
+
+/* ============================================================
+   FORM ROW
+============================================================ */
+.form-row { display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end; }
+.form-row > * { flex:1; min-width:120px; }
+
+/* ============================================================
+   GUIDE ITEMS
+============================================================ */
+.guide-item {
+  padding:12px 15px;border-radius:var(--radius-sm);
+  background:var(--glass);border:1px solid var(--border);
+  transition:all var(--t) var(--ease);
+}
+.guide-item:hover { background:var(--glass-hover); border-color:rgba(255,255,255,0.1); }
+.guide-item-title { font-weight:600;font-size:13px;margin-bottom:4px; }
+.guide-item-desc { font-size:12px;color:var(--text-2);line-height:1.5; }
+
+/* ============================================================
+   ANIMATIONS
+============================================================ */
+@keyframes fadeUp {
+  from{opacity:0;transform:translateY(16px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes shake {
+  0%,100%{transform:rotate(0);}20%{transform:rotate(-12deg);}40%{transform:rotate(12deg);}60%{transform:rotate(-8deg);}80%{transform:rotate(8deg);}
+}
+
+/* ============================================================
+   MOBILE
+============================================================ */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;}
+  .hamburger{display:block;}
+  .overlay.open{display:block;}
+  .content{padding:14px 14px 20px;}
+  .reminder-form{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .topbar{padding:0 14px;}
+  #datetime-display{display:none;}
+  .score-ring{width:120px;height:120px;}
+  .score-ring svg{width:120px;height:120px;}
+  .score-ring-fill{stroke-dasharray:319;}
+  .score-ring-inner-fill{stroke-dasharray:294;}
+  .score-num-val{font-size:28px;}
+}
+@media(max-width:480px){
+  .grid-2{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  .water-big-num{font-size:44px;}
+}
+
+/* ============================================================
+   MULTI-USER: SWITCH USER MODAL
+============================================================ */
+#switch-modal {
+  position:fixed; inset:0; z-index:2000;
+  background:rgba(0,0,0,0.72);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.22s var(--ease);
+  backdrop-filter:blur(8px);
+}
+#switch-modal.open { opacity:1; pointer-events:all; }
+.switch-modal-box {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:32px 28px 24px;
+  width:min(480px,92vw);
+  box-shadow:var(--shadow-lg);
+  transform:scale(0.92) translateY(16px);
+  transition:transform 0.28s var(--spring), opacity 0.22s var(--ease);
+  opacity:0;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+#switch-modal.open .switch-modal-box { transform:scale(1) translateY(0); opacity:1; }
+.switch-modal-title {
+  font-family:'Space Grotesk',sans-serif;
+  font-size:19px; font-weight:700; color:var(--text-1);
+  margin-bottom:5px; display:flex; align-items:center; gap:9px;
+}
+.switch-modal-sub { font-size:13px; color:var(--text-2); margin-bottom:20px; }
+
+/* Profile grid */
+.profile-grid { display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; margin-bottom:18px; }
+.profile-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--glass);
+  cursor:pointer; transition:all var(--t) var(--ease);
+  position:relative;
+}
+.profile-item:hover { background:var(--glass-hover); border-color:rgba(255,255,255,0.15); }
+.profile-item.active-profile {
+  border-color:rgba(59,130,246,0.45);
+  background:rgba(59,130,246,0.08);
+}
+.profile-item.active-profile::after {
+  content:'Active';
+  position:absolute; right:12px;
+  font-size:10px; font-weight:700; letter-spacing:0.5px;
+  color:var(--blue-l); background:rgba(59,130,246,0.15);
+  border:1px solid rgba(59,130,246,0.3);
+  padding:2px 8px; border-radius:99px;
+}
+.profile-avatar {
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:700; color:#fff; flex-shrink:0;
+}
+.profile-info .pname { font-size:14px; font-weight:600; color:var(--text-1); }
+.profile-info .psub  { font-size:11.5px; color:var(--text-2); margin-top:2px; }
+.profile-del {
+  margin-left:auto; width:28px; height:28px; border-radius:50%;
+  background:none; border:none; cursor:pointer; color:var(--text-3);
+  font-size:13px; transition:all var(--t) var(--ease);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.profile-del:hover { color:var(--red); background:rgba(239,68,68,0.12); }
+
+/* New user form inside switch modal */
+.switch-divider {
+  display:flex; align-items:center; gap:10px; margin:14px 0;
+  font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.8px;
+}
+.switch-divider::before, .switch-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.switch-new-row { display:flex; gap:10px; }
+.switch-new-row .form-input { flex:1; }
+.switch-new-btn {
+  padding:10px 18px; border-radius:var(--radius-sm); border:none;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  color:#fff; font-family:'DM Sans',sans-serif; font-size:13.5px; font-weight:600;
+  cursor:pointer; white-space:nowrap; transition:all var(--t) var(--ease);
+}
+.switch-new-btn:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(59,130,246,0.35); }
+
+/* Switch button in sidebar */
+.switch-user-btn {
+  display:flex; align-items:center; gap:8px;
+  width:100%; padding:8px 10px; border-radius:var(--radius-sm);
+  border:1px solid rgba(59,130,246,0.25); background:rgba(59,130,246,0.07);
+  color:rgba(147,197,253,0.85); font-family:'DM Sans',sans-serif; font-size:12.5px;
+  font-weight:500; cursor:pointer; transition:all var(--t) var(--ease);
+  margin-bottom:6px;
+}
+.switch-user-btn:hover { background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.45); color:var(--blue-l); }
+
+/* User switch overlay animation */
+#user-switch-overlay {
+  position:fixed; inset:0; z-index:3000;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:16px;
+  background:var(--bg-base);
+  opacity:0; pointer-events:none;
+  transition:opacity 0.3s var(--ease);
+}
+#user-switch-overlay.visible { opacity:1; pointer-events:all; }
+.uso-avatar {
+  width:68px; height:68px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; font-weight:700; color:#fff;
+  animation:usoAvatarPop 0.5s var(--spring) 0.15s both; opacity:0;
+  box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 0 30px rgba(59,130,246,0.3);
+}
+@keyframes usoAvatarPop { from{opacity:0;transform:scale(0.4);} to{opacity:1;transform:scale(1);} }
+.uso-text {
+  font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; color:var(--text-1);
+  animation:fadeUp 0.4s var(--ease) 0.3s both; opacity:0;
+}
+.uso-sub { font-size:13px; color:var(--text-2); animation:fadeUp 0.4s var(--ease) 0.45s both; opacity:0; }
+.uso-bar { width:160px; height:3px; background:var(--border); border-radius:99px; overflow:hidden; animation:fadeUp 0.4s var(--ease) 0.5s both; opacity:0; }
+.uso-bar-fill { height:100%; background:linear-gradient(90deg,var(--blue),var(--cyan)); border-radius:99px; animation:usoBarFill 0.8s ease 0.6s both; }
+@keyframes usoBarFill { from{width:0} to{width:100%} }
+
+/* ============================================================
+   SMART FITNESS TIPS
+============================================================ */
+.fitness-search-wrap {
+  position:relative; margin-bottom:0;
+}
+.fitness-search-icon {
+  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  font-size:17px; pointer-events:none; z-index:2;
+}
+.fitness-search-input {
+  width:100%; padding:13px 16px 13px 46px;
+  border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--glass); color:var(--text-1);
+  font-family:'DM Sans',sans-serif; font-size:14.5px;
+  outline:none; transition:all var(--t) var(--ease);
+}
+.fitness-search-input::placeholder { color:var(--text-3); }
+.fitness-search-input:focus {
+  border-color:var(--amber);
+  background:rgba(245,158,11,0.06);
+  box-shadow:0 0 0 3px rgba(245,158,11,0.12);
+}
+.fitness-chips {
+  display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;
+}
+.fitness-chip {
+  padding:5px 14px; border-radius:99px; border:1px solid var(--border);
+  background:var(--glass); color:var(--text-2); font-size:12.5px; font-weight:500;
+  cursor:pointer; transition:all var(--t) var(--ease);
+}
+.fitness-chip:hover { border-color:var(--amber); color:var(--amber-l); background:rgba(245,158,11,0.08); }
+.fitness-chip.active-chip { border-color:var(--amber); color:var(--amber-l); background:rgba(245,158,11,0.12); }
+
+/* Fitness tip result area */
+#fitness-tips-result { margin-top:20px; }
+.ftips-header {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+}
+.ftips-header-badge {
+  font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+  padding:3px 10px; border-radius:99px;
+}
+.ftips-header-title {
+  font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; color:var(--text-1);
+}
+.ftips-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+
+.ftip-card {
+  border-radius:var(--radius); padding:20px 18px;
+  border:1px solid var(--border);
+  position:relative; overflow:hidden;
+  opacity:0; transform:translateY(18px);
+  transition:all 0.3s var(--ease);
+  cursor:default;
+}
+.ftip-card.visible { opacity:1; transform:translateY(0); }
+.ftip-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-md); }
+.ftip-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.ftip-icon-wrap {
+  width:44px; height:44px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:21px; margin-bottom:13px; flex-shrink:0;
+}
+.ftip-card-title { font-size:14px; font-weight:700; color:var(--text-1); margin-bottom:6px; font-family:'Space Grotesk',sans-serif; }
+.ftip-card-body  { font-size:12.5px; color:var(--text-2); line-height:1.65; }
+.ftip-number {
+  position:absolute; top:14px; right:16px;
+  font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700;
+  opacity:0.05; line-height:1;
+}
+
+/* Weight Gain theme — green */
+.ftip-gain {
+  background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(52,211,153,0.05));
+  border-color:rgba(16,185,129,0.18);
+}
+.ftip-gain::before { background:linear-gradient(90deg,var(--green),var(--green-l)); }
+.ftip-gain .ftip-icon-wrap { background:rgba(16,185,129,0.15); }
+.ftip-gain .ftip-card-title { color:var(--green-l); }
+.ftip-gain:hover { border-color:rgba(16,185,129,0.35); box-shadow:0 8px 30px rgba(16,185,129,0.15); }
+
+/* Weight Loss theme — blue/purple */
+.ftip-loss {
+  background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.05));
+  border-color:rgba(59,130,246,0.18);
+}
+.ftip-loss::before { background:linear-gradient(90deg,var(--blue),var(--purple)); }
+.ftip-loss .ftip-icon-wrap { background:rgba(59,130,246,0.15); }
+.ftip-loss .ftip-card-title { color:var(--blue-l); }
+.ftip-loss:hover { border-color:rgba(59,130,246,0.35); box-shadow:0 8px 30px rgba(59,130,246,0.15); }
+
+/* General fitness theme — amber */
+.ftip-general {
+  background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(251,191,36,0.04));
+  border-color:rgba(245,158,11,0.18);
+}
+.ftip-general::before { background:linear-gradient(90deg,var(--amber),var(--amber-l)); }
+.ftip-general .ftip-icon-wrap { background:rgba(245,158,11,0.15); }
+.ftip-general .ftip-card-title { color:var(--amber-l); }
+.ftip-general:hover { border-color:rgba(245,158,11,0.35); box-shadow:0 8px 30px rgba(245,158,11,0.15); }
+
+.ftips-empty {
+  text-align:center; padding:32px 20px; color:var(--text-3);
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+}
+.ftips-empty-icon { font-size:40px; opacity:0.5; animation:floatIcon 3s ease-in-out infinite; }
+@keyframes floatIcon { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.ftips-empty-text { font-size:13.5px; }
+.ftips-empty-hint { font-size:12px; opacity:0.6; }
+
+/* Light mode fitness card adjustments */
+[data-theme="light"] .ftip-gain  { background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(52,211,153,0.04)); }
+[data-theme="light"] .ftip-loss  { background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(139,92,246,0.04)); }
+[data-theme="light"] .ftip-general { background:linear-gradient(135deg,rgba(245,158,11,0.07),rgba(251,191,36,0.03)); }
+
+/* ============================================================
+   WATER COUNT CENTERED
+============================================================ */
+#water-count { display:block; margin:0 auto; }
+</style>
+</head>
+<body>
+
+<!-- ===== INTRO SPLASH SCREEN ===== -->
+<div id="intro-screen">
+  <!-- Canvas for particle system -->
+  <canvas id="intro-canvas"></canvas>
+
+  <!-- Layered background -->
+  <div class="intro-bg">
+    <div class="intro-bg-orb intro-bg-orb-1"></div>
+    <div class="intro-bg-orb intro-bg-orb-2"></div>
+    <div class="intro-bg-orb intro-bg-orb-3"></div>
+  </div>
+  <div class="intro-grid"></div>
+
+  <!-- Floating health icons (injected by JS) -->
+  <div id="intro-float-icons"></div>
+
+  <!-- Main center content — Phase 1: Splash -->
+  <div class="intro-center" id="intro-phase1">
+    <div class="intro-logo-wrap">
+      <div class="intro-logo-ring"></div>
+      <div class="intro-logo-ring-2"></div>
+      <div class="intro-logo-icon">🏥</div>
+    </div>
+
+    <div class="intro-title">
+      <span class="intro-title-gradient">Smart Health</span><br>
+      <span class="intro-title-gradient">Reminder System</span>
+    </div>
+    <div class="intro-subtitle">Your personal AI-powered health companion</div>
+
+    <div class="intro-pills">
+      <div class="intro-pill" style="animation-delay:1.55s"><span>💧</span><span>Hydration</span></div>
+      <div class="intro-pill" style="animation-delay:1.65s"><span>❤️</span><span>Heart Health</span></div>
+      <div class="intro-pill" style="animation-delay:1.75s"><span>💊</span><span>Medicine</span></div>
+      <div class="intro-pill" style="animation-delay:1.85s"><span>😴</span><span>Sleep</span></div>
+      <div class="intro-pill" style="animation-delay:1.95s"><span>🏃</span><span>Exercise</span></div>
+    </div>
+
+    <button class="intro-enter-btn pulsing" id="intro-enter-btn" onclick="showIntroWelcome()">
+      Get Started &nbsp;→
+    </button>
+  </div>
+
+  <!-- Phase 2: Welcome / Name Form -->
+  <div class="intro-welcome" id="intro-phase2" style="display:none">
+    <div class="intro-welcome-inner">
+
+      <!-- Cartoon assistant -->
+      <div class="intro-assistant">
+        <div class="intro-assistant-bubble" id="intro-bubble">
+          <span id="intro-bubble-text">Hi there! 👋 I'm your health buddy.</span>
+          <div class="bubble-tail"></div>
+        </div>
+        <div class="intro-assistant-body">
+          <div class="assistant-head">
+            <div class="assistant-face">
+              <div class="assistant-eyes">
+                <div class="assistant-eye"><div class="assistant-pupil"></div></div>
+                <div class="assistant-eye"><div class="assistant-pupil"></div></div>
+              </div>
+              <div class="assistant-smile"></div>
+            </div>
+            <div class="assistant-ear left"></div>
+            <div class="assistant-ear right"></div>
+          </div>
+          <div class="assistant-torso">
+            <div class="assistant-cross">✚</div>
+          </div>
+          <div class="assistant-arms">
+            <div class="assistant-arm left"></div>
+            <div class="assistant-arm right"></div>
+          </div>
+          <div class="assistant-legs">
+            <div class="assistant-leg"></div>
+            <div class="assistant-leg"></div>
+          </div>
+          <div class="assistant-shadow"></div>
+        </div>
+        <!-- Floating hearts around assistant -->
+        <div class="assistant-float-item a1">❤️</div>
+        <div class="assistant-float-item a2">⭐</div>
+        <div class="assistant-float-item a3">✨</div>
+      </div>
+
+      <!-- Welcome form card -->
+      <div class="intro-form-card">
+        <div class="intro-form-badge">🌟 Welcome</div>
+        <h2 class="intro-form-title">What's your name?</h2>
+        <p class="intro-form-sub">Let me personalise your health dashboard just for you.</p>
+
+        <div class="intro-name-wrap">
+          <div class="intro-name-icon">👤</div>
+          <input
+            class="intro-name-input"
+            id="intro-name-input"
+            type="text"
+            placeholder="Enter your name…"
+            maxlength="30"
+            autocomplete="off"
+          />
+          <div class="intro-name-glow"></div>
+        </div>
+
+        <div class="intro-form-features">
+          <div class="iff-item"><span>💧</span> Track daily water</div>
+          <div class="iff-item"><span>💊</span> Medicine reminders</div>
+          <div class="iff-item"><span>😴</span> Monitor sleep</div>
+          <div class="iff-item"><span>🏃</span> Log workouts</div>
+        </div>
+
+        <button class="intro-launch-btn" id="intro-launch-btn" onclick="introLaunch()">
+          <span class="ilb-text">Launch My Dashboard</span>
+          <span class="ilb-arrow">🚀</span>
+          <div class="ilb-ripple"></div>
+        </button>
+
+        <div class="intro-form-note">Your data stays private on this device only</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom progress bar -->
+  <div class="intro-progress-bar">
+    <div class="intro-progress-fill" id="intro-progress-fill"></div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="intro-scroll-hint">
+    <span>scroll to explore</span>
+    <div class="intro-dots-row">
+      <div class="intro-scroll-dot"></div>
+      <div class="intro-scroll-dot"></div>
+      <div class="intro-scroll-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD TRANSITION OVERLAY ===== -->
+<div id="intro-transition">
+  <div class="intro-trans-icon">🏥</div>
+  <div class="intro-trans-text">Welcome, <span id="intro-trans-name">there</span>!</div>
+  <div class="intro-trans-bar-wrap">
+    <div class="intro-trans-bar"></div>
+  </div>
+</div>
+
+<!-- BG BLOBS -->
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-particles" id="login-particles"></div>
+  <div class="login-center">
+    <div class="login-brand">
+      <div class="login-brand-icon">🏥</div>
+      <div>
+        <div class="login-brand-name">HealthHub</div>
+        <div class="login-brand-tag">Smart Health Reminder System</div>
+      </div>
+    </div>
+    <div class="login-box">
+      <div class="login-h">Welcome back 👋</div>
+      <div class="login-sub">Enter your name to access your personal health dashboard</div>
+      <div class="input-wrap">
+        <span class="input-icon">✦</span>
+        <input class="login-input" id="login-name" type="text" placeholder="Your name…" maxlength="30" autocomplete="off" />
+      </div>
+      <button class="login-btn" onclick="doLogin()">
+        <span>Launch Dashboard</span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast-container"></div>
+
+<!-- ===== LOGIN LOADER ===== -->
+<div id="login-loader">
+  <div class="loader-orbit">
+    <div class="loader-ring-orbit"></div>
+    <div class="loader-ring-orbit-2"></div>
+    <div class="loader-core"></div>
+  </div>
+  <div class="loader-steps">
+    <div class="loader-step-text" id="loader-step-text">Initialising…</div>
+    <div class="loader-dots">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESET MODAL ===== -->
+<div class="modal-backdrop" id="reset-modal" onclick="handleModalBackdropClick(event)">
+  <div class="modal-box">
+    <span class="modal-icon">🗑️</span>
+    <div class="modal-title">Reset All Data?</div>
+    <div class="modal-body">
+      This will permanently erase everything stored in HealthHub — reminders, medicines, water logs, sleep records, exercise history, and analytics.
+    </div>
+    <div class="modal-warn">⚠️ This action cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeResetModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmReset()">Yes, Reset Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SWITCH USER MODAL ===== -->
+<div id="switch-modal" onclick="handleSwitchBackdropClick(event)">
+  <div class="switch-modal-box">
+    <div class="switch-modal-title">👥 Switch Profile</div>
+    <div class="switch-modal-sub">Select an existing profile or create a new one</div>
+    <div class="profile-grid" id="profile-grid"></div>
+    <div class="switch-divider">or add new user</div>
+    <div class="switch-new-row">
+      <input class="form-input" id="switch-new-name" placeholder="Enter new name…" maxlength="30" autocomplete="off" onkeydown="if(event.key==='Enter')switchToNewUser()" />
+      <button class="switch-new-btn" onclick="switchToNewUser()">Create →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== USER SWITCH OVERLAY ===== -->
+<div id="user-switch-overlay">
+  <div class="uso-avatar" id="uso-avatar">?</div>
+  <div class="uso-text" id="uso-text">Switching profile…</div>
+  <div class="uso-sub" id="uso-sub">Loading your data</div>
+  <div class="uso-bar"><div class="uso-bar-fill"></div></div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">🏥</div>
+        <div>
+          <div class="brand-name">HealthHub</div>
+          <div class="brand-tag">Smart Health Reminder</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="avatar" id="nav-avatar">?</div>
+      <div>
+        <div class="user-name" id="nav-username">User</div>
+        <div class="user-sub">Stay healthy today 💚</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="goPage('dashboard')">
+        <div class="nav-icon-wrap">🏠</div>Dashboard
+      </div>
+      <div class="nav-item" onclick="goPage('analytics')">
+        <div class="nav-icon-wrap">📊</div>Analytics
+      </div>
+
+      <div class="nav-section">Daily Tracking</div>
+      <div class="nav-item" onclick="goPage('water')">
+        <div class="nav-icon-wrap">💧</div>Water Intake
+      </div>
+      <div class="nav-item" onclick="goPage('sleep')">
+        <div class="nav-icon-wrap">😴</div>Sleep
+      </div>
+      <div class="nav-item" onclick="goPage('exercise')">
+        <div class="nav-icon-wrap">🏃</div>Exercise
+      </div>
+
+      <div class="nav-section">Health Tools</div>
+      <div class="nav-item" onclick="goPage('reminders')">
+        <div class="nav-icon-wrap">🔔</div>Reminders
+      </div>
+      <div class="nav-item" onclick="goPage('medicine')">
+        <div class="nav-icon-wrap">💊</div>Medicine
+      </div>
+      <div class="nav-item" onclick="goPage('tips')">
+        <div class="nav-icon-wrap">💡</div>Health Tips
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="switch-user-btn" onclick="openSwitchModal()">
+        <span>👥</span> Switch User
+      </button>
+      <div class="dark-toggle" onclick="toggleDark()">
+        <div class="dark-toggle-label">
+          <span id="dark-icon">🌙</span>
+          <span id="dark-label">Dark Mode</span>
+        </div>
+        <div class="toggle-sw" id="dark-toggle-sw">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+      <button class="reset-btn" onclick="openResetModal()">
+        <span>🗑️</span> Reset All Data
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="hamburger" onclick="openSidebar()">☰</button>
+        <div class="topbar-left">
+          <h1 id="page-title">Dashboard</h1>
+          <p id="page-sub">Good morning! Let's check your health today.</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span id="datetime-display"></span>
+        <button class="notif-btn" onclick="goPage('reminders')" title="Reminders">
+          🔔
+          <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+        </button>
+        <button class="notif-btn ai-chat-toggle-btn" onclick="toggleAIChat()" title="AI Health Assistant" id="ai-chat-btn" style="position:relative">
+          🤖
+          <span class="ai-pulse-dot" id="ai-pulse-dot"></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="page active" id="page-dashboard">
+        <!-- Stat Cards -->
+        <div class="grid-4">
+          <div class="stat-card blue">
+            <div class="stat-card-inner">
+              <div class="stat-icon-wrap">💧</div>
+              <div class="stat-trend badge badge-blue" id="water-trend-badge">0/8</div>
+            </div>
+            <div class="stat-label">Water Today</div>
+            <div class="stat-value" id="dash-water">0<span>/8</span></div>
+            <div class="stat-sub">glasses consumed</div>
+            <div class="stat-prog"><div class="stat-prog-fill" id="stat-water-prog" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card cyan">
+            <div class="stat-card-inner">
+              <div class="stat-icon-wrap">💊</div>
+            </div>
+            <div class="stat-label">Medicine</div>
+            <div class="stat-value" id="dash-med">0<span>%</span></div>
+            <div class="stat-sub">doses completed</div>
+            <div class="stat-prog"><div class="stat-prog-fill" id="stat-med-prog" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-card-inner">
+              <div class="stat-icon-wrap">😴</div>
+            </div>
+            <div class="stat-label">Sleep</div>
+            <div class="stat-value" id="dash-sleep">0<span>h</span></div>
+            <div class="stat-sub" id="dash-sleep-lbl">no data</div>
+            <div class="stat-prog"><div class="stat-prog-fill" id="stat-sleep-prog" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-card-inner">
+              <div class="stat-icon-wrap">🏃</div>
+            </div>
+            <div class="stat-label">Exercise</div>
+            <div class="stat-value" id="dash-ex">0<span>m</span></div>
+            <div class="stat-sub">minutes today</div>
+            <div class="stat-prog"><div class="stat-prog-fill" id="stat-ex-prog" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="section-title">Today's Overview</div>
+        <div class="grid-2">
+
+          <!-- Health Score -->
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(59,130,246,0.15)">📈</div>
+              Health Score
+            </div>
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg width="150" height="150" viewBox="0 0 150 150">
+                  <circle class="score-ring-bg" cx="75" cy="75" r="63"/>
+                  <circle class="score-ring-inner-fill" id="score-ring-inner" cx="75" cy="75" r="58"/>
+                  <circle class="score-ring-fill" id="score-ring-fill" cx="75" cy="75" r="63"/>
+                </svg>
+                <div class="score-num">
+                  <div class="score-num-val" id="score-num">0</div>
+                  <div class="score-num-sub">/ 100</div>
+                </div>
+              </div>
+              <div class="score-label" id="score-label">—</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+              <div class="prog-wrap">
+                <div class="prog-label"><span>💧 Hydration</span><span id="s-water-pct">0%</span></div>
+                <div class="prog-bar"><div class="prog-fill blue" id="s-water-bar" style="width:0%"></div></div>
+              </div>
+              <div class="prog-wrap">
+                <div class="prog-label"><span>💊 Medicine</span><span id="s-med-pct">0%</span></div>
+                <div class="prog-bar"><div class="prog-fill green" id="s-med-bar" style="width:0%"></div></div>
+              </div>
+              <div class="prog-wrap">
+                <div class="prog-label"><span>😴 Sleep</span><span id="s-sleep-pct">0%</span></div>
+                <div class="prog-bar"><div class="prog-fill purple" id="s-sleep-bar" style="width:0%"></div></div>
+              </div>
+              <div class="prog-wrap">
+                <div class="prog-label"><span>🏃 Exercise</span><span id="s-ex-pct">0%</span></div>
+                <div class="prog-bar"><div class="prog-fill amber" id="s-ex-bar" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Reminders -->
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(139,92,246,0.15)">🔔</div>
+              Upcoming Reminders
+            </div>
+            <div id="dash-reminders-list">
+              <div class="empty"><div class="empty-icon">🔔</div><div class="empty-text">No reminders yet</div></div>
+            </div>
+            <button class="action-btn btn-primary" style="margin-top:14px;width:100%" onclick="goPage('reminders')">+ Add Reminder</button>
+          </div>
+        </div>
+
+        <div class="section-title">Tip of the Day</div>
+        <div class="tip-card" id="dash-tip">
+          <div class="tip-cat" id="dash-tip-cat">Loading…</div>
+          <div class="tip-text" id="dash-tip-text"></div>
+          <button class="tip-btn" onclick="refreshTip()">New Tip ↻</button>
+        </div>
+      </div>
+
+      <!-- ===== REMINDERS ===== -->
+      <div class="page" id="page-reminders">
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between">
+            <span style="display:flex;align-items:center;gap:8px">
+              <div class="ctitle-icon" style="background:rgba(59,130,246,0.15)">🔔</div>
+              Add New Reminder
+            </span>
+            <button class="action-btn btn-ghost" style="font-size:12px;padding:6px 13px" onclick="playBeep();showToast('🔔 Testing chime sound…')">🔔 Test Sound</button>
+          </div>
+          <div class="reminder-form" id="rem-form">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input class="form-input" id="rem-title" placeholder="e.g. Take Vitamin C" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time</label>
+              <input class="form-input" id="rem-time" type="time" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="rem-cat">
+                <option value="medicine">💊 Medicine</option>
+                <option value="water">💧 Water</option>
+                <option value="sleep">😴 Sleep</option>
+                <option value="exercise">🏃 Exercise</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="action-btn btn-primary" style="width:100%" onclick="addReminder()">+ Add</button>
+            </div>
+          </div>
+          <div class="reminder-list" id="reminder-list">
+            <div class="empty"><div class="empty-icon">🔔</div><div class="empty-text">No reminders yet. Add one above!</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== WATER ===== -->
+      <div class="page" id="page-water">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(59,130,246,0.15)">💧</div>
+              Water Intake Tracker
+            </div>
+            <div style="text-align:center;padding:8px 0">
+              <div class="water-big-num" id="water-count">0</div>
+              <div style="color:var(--text-2);font-size:13px;margin-top:4px">of 8 glasses goal</div>
+            </div>
+            <div class="glass-grid" id="glass-grid"></div>
+            <div class="prog-wrap" style="margin-top:12px">
+              <div class="prog-label"><span>Daily Progress</span><span id="water-pct">0%</span></div>
+              <div class="prog-bar"><div class="prog-fill blue" id="water-prog" style="width:0%"></div></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button class="action-btn btn-primary" style="flex:1" onclick="addGlass()">+ Add Glass</button>
+              <button class="action-btn btn-ghost" onclick="removeGlass()">− Remove</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(6,182,212,0.15)">📖</div>
+              Hydration Guide
+            </div>
+            <p style="font-size:13.5px;color:var(--text-2);line-height:1.7;margin-bottom:16px">
+              Staying hydrated is essential for overall health. The recommended daily intake is about <strong style="color:var(--text-1)">8 glasses (2 litres)</strong> for most adults.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="guide-item">
+                <div class="guide-item-title" style="color:#f87171">⚠️ 0–3 glasses</div>
+                <div class="guide-item-desc">Very low – Drink more water immediately!</div>
+              </div>
+              <div class="guide-item">
+                <div class="guide-item-title" style="color:var(--amber-l)">⚡ 4–6 glasses</div>
+                <div class="guide-item-desc">Average – You're getting there, keep going!</div>
+              </div>
+              <div class="guide-item">
+                <div class="guide-item-title" style="color:var(--green-l)">✅ 7–8+ glasses</div>
+                <div class="guide-item-desc">Excellent – Well hydrated and thriving!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MEDICINE ===== -->
+      <div class="page" id="page-medicine">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(16,185,129,0.15)">💊</div>
+              Add Medicine
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Medicine Name</label>
+                <input class="form-input" id="med-name" placeholder="e.g. Paracetamol" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dosage</label>
+                <input class="form-input" id="med-dose" placeholder="e.g. 500mg" />
+              </div>
+            </div>
+            <div class="form-row" style="margin-top:12px">
+              <div class="form-group">
+                <label class="form-label">Time</label>
+                <input class="form-input" id="med-time" type="time" />
+              </div>
+              <div style="display:flex;align-items:flex-end">
+                <button class="action-btn btn-primary" style="width:100%" onclick="addMedicine()">+ Add Medicine</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(16,185,129,0.15)">📋</div>
+              Today's Medicines
+            </div>
+            <div id="med-list">
+              <div class="empty"><div class="empty-icon">💊</div><div class="empty-text">No medicines added</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SLEEP ===== -->
+      <div class="page" id="page-sleep">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(139,92,246,0.15)">😴</div>
+              Log Sleep Hours
+            </div>
+            <label class="form-label">Hours slept last night</label>
+            <input class="range-input" id="sleep-range" type="range" min="0" max="12" step="0.5" value="0" oninput="onSleepChange()" />
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-bottom:18px;font-family:'Space Grotesk',sans-serif">
+              <span>0h</span><span>6h</span><span>12h</span>
+            </div>
+            <div style="text-align:center;padding:10px 0">
+              <span style="font-size:54px;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--purple-l)" id="sleep-display">0</span>
+              <span style="font-size:22px;color:var(--text-2)"> hours</span>
+              <span class="sleep-status" id="sleep-status-badge"></span>
+            </div>
+            <span class="sleep-icon" id="sleep-emoji">😶</span>
+            <button class="action-btn btn-primary" style="width:100%;margin-top:12px" onclick="saveSleep()">Save Sleep Data</button>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(139,92,246,0.15)">📖</div>
+              Sleep Guide
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="guide-item">
+                <div class="guide-item-title">😵 Less than 6 hours <span class="badge badge-amber">Poor</span></div>
+                <div class="guide-item-desc">May cause fatigue, memory issues, and immune weakness.</div>
+              </div>
+              <div class="guide-item">
+                <div class="guide-item-title">😐 6–7 hours <span class="badge badge-blue">Average</span></div>
+                <div class="guide-item-desc">Acceptable but aim for more for optimal performance.</div>
+              </div>
+              <div class="guide-item">
+                <div class="guide-item-title">😊 7–9 hours <span class="badge badge-green">Ideal</span></div>
+                <div class="guide-item-desc">Ideal sleep for most adults. Supports recovery and health.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EXERCISE ===== -->
+      <div class="page" id="page-exercise">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(245,158,11,0.15)">🏃</div>
+              Log Exercise
+            </div>
+            <label class="form-label">Minutes of exercise today</label>
+            <input class="range-input" id="ex-range" type="range" min="0" max="120" step="5" value="0" oninput="onExChange()" style="accent-color:var(--amber)" />
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-bottom:18px;font-family:'Space Grotesk',sans-serif">
+              <span>0</span><span>60m</span><span>120m</span>
+            </div>
+            <div style="text-align:center;padding:10px 0">
+              <span style="font-size:54px;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--amber-l)" id="ex-display">0</span>
+              <span style="font-size:22px;color:var(--text-2)"> minutes</span>
+            </div>
+            <div class="prog-wrap" style="margin-top:16px">
+              <div class="prog-label"><span>Daily Goal (30 min)</span><span id="ex-pct">0%</span></div>
+              <div class="prog-bar"><div class="prog-fill amber" id="ex-prog" style="width:0%"></div></div>
+            </div>
+            <button class="action-btn btn-primary" style="width:100%;margin-top:16px" onclick="saveExercise()">Save Exercise</button>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(139,92,246,0.15)">📅</div>
+              This Week
+            </div>
+            <div class="exercise-bars" id="ex-week-chart"></div>
+          </div>
+        </div>
+
+        <!-- Smart Fitness Tips -->
+        <div class="section-title" style="margin-top:26px">Smart Fitness Tips</div>
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between">
+            <span style="display:flex;align-items:center;gap:8px">
+              <div class="ctitle-icon" style="background:rgba(245,158,11,0.15)">🔍</div>
+              Search Fitness Advice
+            </span>
+            <span style="font-size:11.5px;color:var(--text-3);font-weight:400">Type a goal to get personalised tips</span>
+          </div>
+          <div class="fitness-search-wrap">
+            <div class="fitness-search-icon">🏋️</div>
+            <input
+              class="fitness-search-input"
+              id="fitness-search"
+              type="text"
+              placeholder="Try: weight gain, weight loss, cardio, strength, flexibility…"
+              oninput="onFitnessSearch()"
+              autocomplete="off"
+            />
+          </div>
+          <div class="fitness-chips">
+            <div class="fitness-chip" onclick="setFitnessSearch('weight gain')">⬆️ Weight Gain</div>
+            <div class="fitness-chip" onclick="setFitnessSearch('weight loss')">🔥 Weight Loss</div>
+            <div class="fitness-chip" onclick="setFitnessSearch('cardio')">❤️ Cardio</div>
+            <div class="fitness-chip" onclick="setFitnessSearch('strength')">💪 Strength</div>
+            <div class="fitness-chip" onclick="setFitnessSearch('flexibility')">🧘 Flexibility</div>
+            <div class="fitness-chip" onclick="setFitnessSearch('sleep recovery')">😴 Recovery</div>
+          </div>
+          <div id="fitness-tips-result"></div>
+        </div>
+      </div>
+
+      <!-- ===== ANALYTICS ===== -->
+      <div class="page" id="page-analytics">
+        <div class="section-title">Weekly Progress</div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(59,130,246,0.15)">💧</div>
+              Water — glasses/day
+            </div>
+            <div class="chart-week" id="chart-water"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(139,92,246,0.15)">😴</div>
+              Sleep — hours/day
+            </div>
+            <div class="chart-week" id="chart-sleep"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(245,158,11,0.15)">🏃</div>
+              Exercise — min/day
+            </div>
+            <div class="chart-week" id="chart-exercise"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <div class="ctitle-icon" style="background:rgba(16,185,129,0.15)">📊</div>
+              Health Score History
+            </div>
+            <div class="chart-week" id="chart-score"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TIPS ===== -->
+      <div class="page" id="page-tips">
+        <div class="section-title">Health Tips</div>
+        <div class="tip-card" style="margin-bottom:18px">
+          <div class="tip-cat" id="tips-cat">—</div>
+          <div class="tip-text" id="tips-text">Loading…</div>
+          <button class="tip-btn" onclick="refreshTip()">Next Tip ↻</button>
+        </div>
+        <div class="grid-3" id="tips-grid"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* =====================================================
+   HEALTH HUB — Smart Health Reminder System
+   All state stored in localStorage under key "hh_data"
+===================================================== */
+
+// ---- HEALTH TIPS ----
+const TIPS = [
+  { cat:"Hydration",    text:"Drink a glass of water first thing in the morning to kickstart your metabolism and rehydrate after sleep." },
+  { cat:"Sleep",        text:"Keep a consistent sleep schedule, even on weekends. Irregular sleep disrupts your circadian rhythm." },
+  { cat:"Nutrition",    text:"Aim to fill half your plate with colourful vegetables and fruits at every meal." },
+  { cat:"Exercise",     text:"Even a 10-minute brisk walk after meals can improve blood sugar regulation and cardiovascular health." },
+  { cat:"Mental Health",text:"Practice 5 minutes of deep breathing or mindfulness each morning to reduce cortisol levels." },
+  { cat:"Hydration",    text:"Caffeinated drinks count against your hydration. Add an extra glass of water for every cup of coffee." },
+  { cat:"Sleep",        text:"Avoid screens for 30 minutes before bedtime. Blue light suppresses melatonin production." },
+  { cat:"Exercise",     text:"Strength training twice a week helps maintain bone density and boosts resting metabolism." },
+  { cat:"Nutrition",    text:"Eating slowly and mindfully helps you recognise fullness cues, preventing overeating." },
+  { cat:"Posture",      text:"Set a reminder every hour to stand up and move. Prolonged sitting increases cardiovascular risk." },
+  { cat:"Immunity",     text:"Regular moderate exercise boosts your immune system — aim for 150 minutes per week." },
+  { cat:"Mental Health",text:"Social connections are as important to health as diet and exercise. Schedule time with loved ones." },
+];
+
+// ---- STATE ----
+let state = {};
+let currentTipIdx = 0;
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ── Multi-user helpers ──────────────────────────────────────
+   hh_users  = { activeUser: "Alice", list: ["Alice","Bob"] }
+   hh_u_Alice = { reminders, medicines, waterCount, … }
+   hh_u_Bob   = { … }
+──────────────────────────────────────────────────────────── */
+function userKey(name) { return 'hh_u_' + name.toLowerCase().trim(); }
+function getUsersMeta() {
+  try { return JSON.parse(localStorage.getItem('hh_users') || '{}'); } catch(e) { return {}; }
+}
+function saveUsersMeta(meta) { localStorage.setItem('hh_users', JSON.stringify(meta)); }
+
+function loadUserState(name) {
+  const key = userKey(name);
+  let u;
+  try { u = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { u = {}; }
+  if (!u.reminders)  u.reminders  = [];
+  if (!u.medicines)  u.medicines  = [];
+  if (!u.waterCount) u.waterCount = 0;
+  if (!u.sleepHours) u.sleepHours = 0;
+  if (!u.exMinutes)  u.exMinutes  = 0;
+  if (!u.history)    u.history    = {};
+  if (!u.darkMode)   u.darkMode   = false;
+  u.username = name;
+  return u;
+}
+function saveUserState() {
+  const today = todayStr();
+  if (!state.history[today]) state.history[today] = {};
+  state.history[today].water    = state.waterCount;
+  state.history[today].sleep    = state.sleepHours;
+  state.history[today].exercise = state.exMinutes;
+  state.history[today].score    = calcScore();
+  const keys = Object.keys(state.history).sort();
+  while (keys.length > 7) { delete state.history[keys.shift()]; }
+  localStorage.setItem(userKey(state.username), JSON.stringify(state));
+  // also update meta
+  const meta = getUsersMeta();
+  meta.activeUser = state.username;
+  if (!meta.list) meta.list = [];
+  if (!meta.list.includes(state.username)) meta.list.push(state.username);
+  saveUsersMeta(meta);
+}
+
+// ---- LOAD / SAVE (aliases used by legacy code) ----
+let _stateLoaded = false;
+function loadState() {
+  if (_stateLoaded) return;
+  _stateLoaded = true;
+  const meta = getUsersMeta();
+  if (meta.activeUser) {
+    state = loadUserState(meta.activeUser);
+  } else {
+    state = {};
+    if (!state.reminders)  state.reminders  = [];
+    if (!state.medicines)  state.medicines  = [];
+    if (!state.waterCount) state.waterCount = 0;
+    if (!state.sleepHours) state.sleepHours = 0;
+    if (!state.exMinutes)  state.exMinutes  = 0;
+    if (!state.username)   state.username   = '';
+    if (!state.darkMode)   state.darkMode   = false;
+    if (!state.history)    state.history    = {};
+  }
+  checkDayReset();
+}
+function saveState() { saveUserState(); }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function checkDayReset() {
+  const today = todayStr();
+  if (state.lastDate && state.lastDate !== today) {
+    state.waterCount = 0; state.sleepHours = 0; state.exMinutes = 0;
+    state.medicines.forEach(m => m.taken = false);
+    state.reminders.forEach(r => r.done = false);
+  }
+  state.lastDate = today;
+}
+
+// ---- LOGIN ----
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  if (!name) { showToast('Please enter your name!', 'error'); return; }
+  const btn = document.querySelector('.login-btn');
+  const input = document.getElementById('login-name');
+  btn.disabled = true; input.disabled = true;
+  btn.innerHTML = '<div class="btn-spinner"></div><span>Setting up…</span>';
+
+  const steps = ['Setting up your profile…','Loading health data…','Preparing your dashboard…','Almost ready!'];
+  const loader = document.getElementById('login-loader');
+  const stepText = document.getElementById('loader-step-text');
+  let stepIdx = 0;
+
+  setTimeout(() => {
+    loader.classList.add('visible');
+    stepText.textContent = steps[stepIdx];
+    const stepInterval = setInterval(() => {
+      stepIdx++;
+      if (stepIdx < steps.length) {
+        stepText.style.animation = 'none'; void stepText.offsetWidth; stepText.style.animation = '';
+        stepText.textContent = steps[stepIdx];
+      } else { clearInterval(stepInterval); }
+    }, 420);
+
+    setTimeout(() => {
+      document.getElementById('login-screen').classList.add('exiting');
+      setTimeout(() => {
+        document.getElementById('login-screen').style.display = 'none';
+        loader.classList.remove('visible');
+        state.username = name; saveState();
+        document.getElementById('app').classList.add('visible');
+        initApp();
+      }, 480);
+    }, 1700);
+  }, 300);
+}
+
+function initApp() {
+  document.getElementById('nav-avatar').textContent = state.username.charAt(0).toUpperCase();
+  document.getElementById('nav-avatar').style.background = avatarColor(state.username);
+  document.getElementById('nav-username').textContent = state.username;
+  applyDark();
+  if (state.darkMode) document.getElementById('dark-toggle-sw').classList.add('on');
+  updateDarkLabel();
+  currentTipIdx = Math.floor(Math.random() * TIPS.length);
+  renderAll();
+  startClock();
+  scheduleReminderCheck();
+  spawnLoginParticles();
+}
+
+// ---- PARTICLES (login decorative) ----
+function spawnLoginParticles() {
+  const container = document.getElementById('login-particles');
+  if (!container) return;
+  const colors = ['#3b82f6','#06b6d4','#8b5cf6','#10b981','#f59e0b'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'login-particle';
+    const size = Math.random() * 8 + 3;
+    p.style.cssText = `
+      width:${size}px;height:${size}px;
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${Math.random()*10+8}s;
+      animation-delay:${Math.random()*8}s;
+    `;
+    container.appendChild(p);
+  }
+}
+
+// ---- CLOCK ----
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const hrs = String(now.getHours()).padStart(2,'0');
+    const min = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('datetime-display').textContent =
+      `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} · ${hrs}:${min}`;
+    updateGreeting();
+  }
+  tick(); setInterval(tick, 10000);
+}
+function updateGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('page-sub').textContent = `${greet}, ${state.username}! Let's track your health today.`;
+}
+
+// ---- DARK MODE ----
+function toggleDark() {
+  state.darkMode = !state.darkMode;
+  applyDark();
+  document.getElementById('dark-toggle-sw').classList.toggle('on', state.darkMode);
+  updateDarkLabel();
+  saveState();
+}
+function applyDark() {
+  document.documentElement.setAttribute('data-theme', state.darkMode ? 'light' : 'dark');
+}
+function updateDarkLabel() {
+  const icon  = document.getElementById('dark-icon');
+  const label = document.getElementById('dark-label');
+  if (state.darkMode) { icon.textContent='☀️'; label.textContent='Light Mode'; }
+  else                { icon.textContent='🌙'; label.textContent='Dark Mode'; }
+}
+
+// ---- NAVIGATION ----
+const PAGE_TITLES = {
+  dashboard: ['Dashboard', ''],
+  reminders: ['Reminders', 'Manage your health reminders'],
+  water:     ['Water Intake', 'Track your daily hydration'],
+  medicine:  ['Medicine Tracker', 'Stay on top of your medications'],
+  sleep:     ['Sleep Tracker', 'Monitor your sleep quality'],
+  exercise:  ['Exercise Tracker', 'Log your daily activity'],
+  analytics: ['Analytics', 'View your weekly health data'],
+  tips:      ['Health Tips', 'Daily health advice'],
+};
+let _pageTransitioning = false;
+function goPage(id) {
+  if (_pageTransitioning) return;
+  const incoming = document.getElementById('page-'+id);
+  if (!incoming || incoming.classList.contains('active')) { closeSidebar(); return; }
+  const outgoing = document.querySelector('.page.active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(id === 'dashboard' ? 'dashboard' :
+        id === 'tips' ? 'tips' : PAGE_TITLES[id][0].toLowerCase().split(' ')[0])) {
+      n.classList.add('active');
+    }
+  });
+  document.getElementById('page-title').textContent = PAGE_TITLES[id][0];
+  document.getElementById('page-sub').textContent   = PAGE_TITLES[id][1] || '';
+  if (id === 'dashboard') updateGreeting();
+  closeSidebar();
+  if (!outgoing || outgoing === incoming) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    incoming.classList.add('active');
+    if (id === 'analytics') renderAnalytics();
+    if (id === 'exercise')  renderExWeek();
+    return;
+  }
+  _pageTransitioning = true;
+  outgoing.classList.add('exiting');
+  setTimeout(() => {
+    outgoing.classList.remove('active', 'exiting');
+    incoming.classList.add('active');
+    _pageTransitioning = false;
+    if (id === 'analytics') renderAnalytics();
+    if (id === 'exercise')  renderExWeek();
+  }, 200);
+}
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+// ---- HEALTH SCORE ----
+function calcScore() {
+  let score = 0;
+  score += Math.min(state.waterCount / 8, 1) * 25;
+  const sl = state.sleepHours;
+  if (sl >= 7 && sl <= 9) score += 25;
+  else if (sl > 0) score += Math.max(0, 25 - Math.abs(sl - 8) * 3);
+  score += Math.min(state.exMinutes / 30, 1) * 25;
+  const meds = state.medicines, rems = state.reminders;
+  const totalItems = meds.length + rems.length;
+  if (totalItems > 0) {
+    const doneItems = meds.filter(m => m.taken).length + rems.filter(r => r.done).length;
+    score += (doneItems / totalItems) * 25;
+  } else { score += 12.5; }
+  return Math.round(Math.min(score, 100));
+}
+function getScoreColor(s) {
+  if (s >= 80) return '#10b981';
+  if (s >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+function getScoreLabel(s) {
+  if (s >= 80) return '🌟 Excellent Health';
+  if (s >= 60) return '👍 Good Progress';
+  if (s >= 40) return '⚡ Keep Going!';
+  return '⚠️ Needs Improvement';
+}
+
+// ---- RENDER ALL ----
+function renderAll() {
+  renderDashboard(); renderReminderList(); renderWater();
+  renderMedList(); renderSleep(); renderExercise(); renderTip(); updateNotifBadge();
+}
+
+// ---- DASHBOARD ----
+function renderDashboard() {
+  const medTotal = state.medicines.length;
+  const medDone  = state.medicines.filter(m => m.taken).length;
+  const medPct   = medTotal > 0 ? Math.round(medDone / medTotal * 100) : 0;
+  const sl       = state.sleepHours;
+  const slLabel  = sl === 0 ? 'no data' : sl < 6 ? 'poor 😕' : sl < 7 ? 'average 😐' : 'good 😊';
+
+  document.getElementById('dash-water').innerHTML = `${state.waterCount}<span>/8</span>`;
+  document.getElementById('dash-med').innerHTML   = `${medPct}<span>%</span>`;
+  document.getElementById('dash-sleep').innerHTML = `${sl}<span>h</span>`;
+  document.getElementById('dash-sleep-lbl').textContent = slLabel;
+  document.getElementById('dash-ex').innerHTML    = `${state.exMinutes}<span>m</span>`;
+
+  // Stat card progress bars
+  const wPct2 = Math.round(Math.min(state.waterCount/8,1)*100);
+  const ePct2 = Math.round(Math.min(state.exMinutes/30,1)*100);
+  const slPct2= Math.round(Math.min(sl/8,1)*100);
+  document.getElementById('stat-water-prog').style.width = wPct2+'%';
+  document.getElementById('stat-med-prog').style.width   = medPct+'%';
+  document.getElementById('stat-sleep-prog').style.width  = slPct2+'%';
+  document.getElementById('stat-ex-prog').style.width    = ePct2+'%';
+  document.getElementById('water-trend-badge').textContent = `${state.waterCount}/8`;
+
+  // Score ring — circumference for r=63: 2π×63 ≈ 396
+  const score = calcScore();
+  const circ  = 396;
+  const offset= circ - (score / 100 * circ);
+  const innerCirc = 364;
+  const innerOff  = innerCirc - (score / 100 * innerCirc);
+  const ring = document.getElementById('score-ring-fill');
+  const innerRing = document.getElementById('score-ring-inner');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = getScoreColor(score);
+  if (innerRing) { innerRing.style.strokeDashoffset = innerOff; innerRing.style.stroke = getScoreColor(score); }
+  document.getElementById('score-num').textContent   = score;
+  document.getElementById('score-label').textContent = getScoreLabel(score);
+
+  // Mini progress bars
+  const wPct  = Math.round(Math.min(state.waterCount/8,1)*100);
+  const ePct  = Math.round(Math.min(state.exMinutes/30,1)*100);
+  const slPct = Math.round(Math.min(sl/8,1)*100);
+  document.getElementById('s-water-pct').textContent = wPct+'%'; document.getElementById('s-water-bar').style.width = wPct+'%';
+  document.getElementById('s-med-pct').textContent   = medPct+'%'; document.getElementById('s-med-bar').style.width  = medPct+'%';
+  document.getElementById('s-sleep-pct').textContent  = slPct+'%'; document.getElementById('s-sleep-bar').style.width  = slPct+'%';
+  document.getElementById('s-ex-pct').textContent    = ePct+'%'; document.getElementById('s-ex-bar').style.width    = ePct+'%';
+
+  // Upcoming reminders
+  const upcoming = state.reminders.filter(r => !r.done).slice(0, 3);
+  const dl = document.getElementById('dash-reminders-list');
+  if (upcoming.length === 0) {
+    dl.innerHTML = `<div class="empty"><div class="empty-icon">🔔</div><div class="empty-text">No pending reminders</div></div>`;
+  } else {
+    dl.innerHTML = upcoming.map(r => `
+      <div class="reminder-item">
+        <div class="ri-cat">${catIcon(r.category)}</div>
+        <div class="ri-body">
+          <div class="ri-title">${esc(r.title)}</div>
+          <div class="ri-time">${r.time || 'No time set'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  renderTip(); saveState();
+}
+
+// ---- REMINDERS ----
+function catIcon(c) { return {medicine:'💊',water:'💧',sleep:'😴',exercise:'🏃'}[c]||'🔔'; }
+function addReminder() {
+  const title = document.getElementById('rem-title').value.trim();
+  const time  = document.getElementById('rem-time').value;
+  const cat   = document.getElementById('rem-cat').value;
+  if (!title) { showToast('Please enter a title!', 'error'); return; }
+  state.reminders.push({ id: Date.now(), title, time, category: cat, done: false });
+  document.getElementById('rem-title').value = '';
+  document.getElementById('rem-time').value  = '';
+  saveState(); renderReminderList(); renderDashboard(); updateNotifBadge();
+  showToast('Reminder added! ✅', 'success');
+}
+function renderReminderList() {
+  const list = document.getElementById('reminder-list');
+  if (state.reminders.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🔔</div><div class="empty-text">No reminders yet. Add one above!</div></div>`;
+    return;
+  }
+  list.innerHTML = state.reminders.map(r => `
+    <div class="reminder-item ${r.done ? 'done' : ''}" id="rem-${r.id}">
+      <div class="ri-cat">${catIcon(r.category)}</div>
+      <div class="ri-body">
+        <div class="ri-title">${esc(r.title)}</div>
+        <div class="ri-time">${r.time || 'No time set'} · <span style="text-transform:capitalize">${r.category}</span></div>
+      </div>
+      <div class="ri-check" onclick="toggleReminder(${r.id})">${r.done ? '✓' : ''}</div>
+      <button class="ri-del" onclick="deleteReminder(${r.id})">✕</button>
+    </div>
+  `).join('');
+}
+function toggleReminder(id) {
+  const r = state.reminders.find(x => x.id === id);
+  if (!r) return;
+  r.done = !r.done;
+  if (r.done) showToast(`"${r.title}" marked complete 🎉`, 'success');
+  saveState(); renderReminderList(); renderDashboard(); updateNotifBadge();
+}
+function deleteReminder(id) {
+  state.reminders = state.reminders.filter(r => r.id !== id);
+  saveState(); renderReminderList(); renderDashboard(); updateNotifBadge();
+  showToast('Reminder removed');
+}
+function updateNotifBadge() {
+  const pending = state.reminders.filter(r => !r.done).length;
+  const badge = document.getElementById('notif-badge');
+  if (pending > 0) { badge.style.display = 'flex'; badge.textContent = pending; }
+  else { badge.style.display = 'none'; }
+}
+function scheduleReminderCheck() {
+  setInterval(() => {
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    state.reminders.forEach(r => {
+      if (!r.done && r.time === hhmm && !r.alerted) {
+        r.alerted = true; playBeep(); showToast(`🔔 Reminder: ${r.title}`, 'success'); saveState();
+      }
+    });
+  }, 30000);
+}
+
+// ---- WATER ----
+function addGlass() {
+  if (state.waterCount >= 12) { showToast('Max 12 glasses tracked!'); return; }
+  state.waterCount++; saveState(); renderWater(); renderDashboard();
+  if (state.waterCount === 8) showToast('🎉 Daily water goal reached!', 'success');
+}
+function removeGlass() {
+  if (state.waterCount <= 0) return;
+  state.waterCount--; saveState(); renderWater(); renderDashboard();
+}
+function renderWater() {
+  document.getElementById('water-count').textContent = state.waterCount;
+  const pct = Math.round(Math.min(state.waterCount/8,1)*100);
+  document.getElementById('water-pct').textContent  = pct+'%';
+  document.getElementById('water-prog').style.width = pct+'%';
+  const grid = document.getElementById('glass-grid');
+  const total = Math.max(8, state.waterCount);
+  grid.innerHTML = Array.from({length:total},(_,i)=>
+    `<div class="glass-item ${i<state.waterCount?'filled':''}" onclick="state.waterCount=${i+1};saveState();renderWater();renderDashboard();">💧</div>`
+  ).join('');
+}
+
+// ---- MEDICINE ----
+function addMedicine() {
+  const name = document.getElementById('med-name').value.trim();
+  const dose = document.getElementById('med-dose').value.trim();
+  const time = document.getElementById('med-time').value;
+  if (!name) { showToast('Enter medicine name!', 'error'); return; }
+  state.medicines.push({ id: Date.now(), name, dose, time, taken: false });
+  document.getElementById('med-name').value = '';
+  document.getElementById('med-dose').value = '';
+  document.getElementById('med-time').value = '';
+  saveState(); renderMedList(); renderDashboard(); showToast('Medicine added! 💊', 'success');
+}
+function renderMedList() {
+  const list = document.getElementById('med-list');
+  if (state.medicines.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">💊</div><div class="empty-text">No medicines added</div></div>`;
+    return;
+  }
+  list.innerHTML = state.medicines.map(m => `
+    <div class="med-item ${m.taken ? 'taken' : ''}">
+      <div class="med-info">
+        <div class="med-name" style="${m.taken?'text-decoration:line-through':''}">💊 ${esc(m.name)}</div>
+        <div class="med-dose">${esc(m.dose)||'No dosage specified'} ${m.time?'· '+m.time:''}</div>
+      </div>
+      ${m.time?`<span class="med-time-tag">${m.time}</span>`:''}
+      <button class="action-btn ${m.taken?'btn-ghost':'btn-green'}" style="padding:7px 13px;font-size:12px" onclick="toggleMed(${m.id})">
+        ${m.taken?'Undo':'✓ Taken'}
+      </button>
+      <button class="action-btn btn-ghost" style="padding:7px 10px;font-size:12px;margin-left:6px" onclick="deleteMed(${m.id})">✕</button>
+    </div>
+  `).join('');
+}
+function toggleMed(id) {
+  const m = state.medicines.find(x => x.id === id);
+  if (!m) return;
+  m.taken = !m.taken;
+  if (m.taken) showToast(`"${m.name}" marked as taken ✅`, 'success');
+  saveState(); renderMedList(); renderDashboard();
+}
+function deleteMed(id) {
+  state.medicines = state.medicines.filter(m => m.id !== id);
+  saveState(); renderMedList(); renderDashboard();
+}
+
+// ---- SLEEP ----
+function onSleepChange() {
+  const v = parseFloat(document.getElementById('sleep-range').value);
+  document.getElementById('sleep-display').textContent = v;
+  const badge = document.getElementById('sleep-status-badge');
+  const emoji = document.getElementById('sleep-emoji');
+  if (v === 0) { badge.textContent=''; badge.className='sleep-status'; emoji.textContent='😶'; }
+  else if (v < 6) { badge.textContent='Poor'; badge.className='sleep-status sleep-poor'; emoji.textContent='😵'; }
+  else if (v < 7) { badge.textContent='Average'; badge.className='sleep-status sleep-avg'; emoji.textContent='😐'; }
+  else { badge.textContent='Good'; badge.className='sleep-status sleep-good'; emoji.textContent='😊'; }
+}
+function saveSleep() {
+  state.sleepHours = parseFloat(document.getElementById('sleep-range').value);
+  saveState(); renderDashboard(); showToast('Sleep data saved! 😴', 'success');
+}
+function renderSleep() {
+  document.getElementById('sleep-range').value = state.sleepHours;
+  onSleepChange();
+}
+
+// ---- EXERCISE ----
+function onExChange() {
+  const v = parseInt(document.getElementById('ex-range').value);
+  document.getElementById('ex-display').textContent = v;
+  const pct = Math.round(Math.min(v/30,1)*100);
+  document.getElementById('ex-pct').textContent  = Math.min(pct,100)+'%';
+  document.getElementById('ex-prog').style.width = Math.min(pct,100)+'%';
+}
+function saveExercise() {
+  state.exMinutes = parseInt(document.getElementById('ex-range').value);
+  saveState(); renderDashboard(); renderExWeek();
+  showToast('Exercise logged! 🏃', 'success');
+  if (state.exMinutes >= 30) showToast('🎉 Exercise goal reached!', 'success');
+}
+function renderExercise() {
+  document.getElementById('ex-range').value = state.exMinutes;
+  onExChange(); renderExWeek();
+}
+function renderExWeek() {
+  const chart = document.getElementById('ex-week-chart');
+  const today = new Date();
+  let html = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const mins = (state.history[key]?.exercise)||(i===0?state.exMinutes:0);
+    const h = Math.round(Math.min(mins/60,1)*76)+4;
+    const isToday = i === 0;
+    html += `<div class="ex-bar-wrap">
+      <div class="ex-bar ${isToday?'today-bar':''}" style="height:${h}px"></div>
+      <div class="ex-day">${DAYS[d.getDay()]}</div>
+      <div class="ex-min">${mins}m</div>
+    </div>`;
+  }
+  chart.innerHTML = html;
+}
+
+// ---- ANALYTICS ----
+function renderAnalytics() {
+  const today = new Date();
+  const days  = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    days.push({ label: DAYS[d.getDay()], key, isToday: i === 0 });
+  }
+  function renderChart(id, field, max, color) {
+    const el = document.getElementById(id);
+    el.innerHTML = days.map(d => {
+      const val = (state.history[d.key]?.[field])||(d.isToday?(field==='water'?state.waterCount:field==='sleep'?state.sleepHours:field==='exercise'?state.exMinutes:calcScore()):0);
+      const pct = Math.round(Math.min(val/max,1)*100);
+      return `<div class="chart-row">
+        <div class="chart-label">${d.label}</div>
+        <div class="chart-track"><div class="chart-fill ${color}" style="width:${pct}%"></div></div>
+        <div class="chart-num">${val}</div>
+      </div>`;
+    }).join('');
+  }
+  renderChart('chart-water','water',8,'blue');
+  renderChart('chart-sleep','sleep',9,'purple');
+  renderChart('chart-exercise','exercise',60,'amber');
+  renderChart('chart-score','score',100,'green');
+}
+
+// ---- TIPS ----
+function refreshTip() {
+  currentTipIdx = (currentTipIdx + 1) % TIPS.length;
+  renderTip();
+}
+function renderTip() {
+  const t = TIPS[currentTipIdx];
+  ['tips-cat','dash-tip-cat'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t.cat;});
+  ['tips-text','dash-tip-text'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t.text;});
+  const grid = document.getElementById('tips-grid');
+  if (grid) {
+    grid.innerHTML = TIPS.map((tip,i) => `
+      <div class="card" style="cursor:pointer;border:${i===currentTipIdx?'1px solid rgba(59,130,246,0.4)':'1px solid var(--border)'}${i===currentTipIdx?';background:rgba(59,130,246,0.06)':''}" onclick="currentTipIdx=${i};renderTip()">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-3);margin-bottom:8px;font-family:'Space Grotesk',sans-serif">${tip.cat}</div>
+        <div style="font-size:13px;line-height:1.6;color:var(--text-2)">${tip.text}</div>
+      </div>
+    `).join('');
+  }
+}
+
+// ---- TOAST ----
+function showToast(msg, type = '') {
+  const tc = document.getElementById('toast-container');
+  const t  = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  tc.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0'; t.style.transform = 'translateX(100%) scale(0.9)'; t.style.transition = '0.3s';
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
+}
+
+// ---- SOUND ----
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx || _audioCtx.state === 'closed') _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function makeReverb(ctx) {
+  const sampleRate = ctx.sampleRate, length = sampleRate*0.6;
+  const impulse = ctx.createBuffer(2,length,sampleRate);
+  for (let ch=0;ch<2;ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i=0;i<length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/length,2.5);
+  }
+  const conv = ctx.createConvolver(); conv.buffer = impulse; return conv;
+}
+function playNote(ctx,masterGain,reverbSend,freq,startTime,duration) {
+  const osc1=ctx.createOscillator(),gain1=ctx.createGain();
+  osc1.type='sine'; osc1.frequency.value=freq;
+  osc1.connect(gain1); gain1.connect(masterGain); gain1.connect(reverbSend);
+  gain1.gain.setValueAtTime(0,startTime); gain1.gain.linearRampToValueAtTime(0.28,startTime+0.012); gain1.gain.exponentialRampToValueAtTime(0.001,startTime+duration);
+  osc1.start(startTime); osc1.stop(startTime+duration+0.05);
+  const osc2=ctx.createOscillator(),gain2=ctx.createGain();
+  osc2.type='triangle'; osc2.frequency.value=freq*2;
+  osc2.connect(gain2); gain2.connect(masterGain); gain2.connect(reverbSend);
+  gain2.gain.setValueAtTime(0,startTime); gain2.gain.linearRampToValueAtTime(0.10,startTime+0.010); gain2.gain.exponentialRampToValueAtTime(0.001,startTime+duration*0.7);
+  osc2.start(startTime); osc2.stop(startTime+duration);
+}
+function playBeep() {
+  try {
+    const ctx=getAudioCtx(),now=ctx.currentTime;
+    const master=ctx.createGain(); master.gain.value=0.85; master.connect(ctx.destination);
+    const reverb=makeReverb(ctx),reverbGain=ctx.createGain(); reverbGain.gain.value=0.18;
+    reverb.connect(reverbGain); reverbGain.connect(master);
+    [523.25,659.25,783.99].forEach((freq,i) => playNote(ctx,master,reverb,freq,now+i*0.18,0.9-i*0.05));
+  } catch(e) { console.warn('Audio playback failed:',e); }
+}
+
+// ---- RESET MODAL ----
+function openResetModal() { closeSidebar(); document.getElementById('reset-modal').classList.add('open'); }
+function closeResetModal() { document.getElementById('reset-modal').classList.remove('open'); }
+function handleModalBackdropClick(e) { if(e.target===document.getElementById('reset-modal')) closeResetModal(); }
+function confirmReset() {
+  const username=state.username, darkMode=state.darkMode;
+  localStorage.removeItem(userKey(username));
+  _stateLoaded = false;
+  state = loadUserState(username);
+  state.darkMode = darkMode;
+  saveState(); closeResetModal();
+  const sleepRange=document.getElementById('sleep-range');
+  if(sleepRange){sleepRange.value=0;onSleepChange();}
+  const exRange=document.getElementById('ex-range');
+  if(exRange){exRange.value=0;onExChange();}
+  renderAll(); showToast('All data has been reset. Fresh start! 🌱','success');
+}
+
+// ---- UTIL ----
+function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---- MULTI-USER: SWITCH USER ----
+const AVATAR_COLORS = [
+  'linear-gradient(135deg,#3b82f6,#06b6d4)',
+  'linear-gradient(135deg,#8b5cf6,#a78bfa)',
+  'linear-gradient(135deg,#10b981,#34d399)',
+  'linear-gradient(135deg,#f59e0b,#fbbf24)',
+  'linear-gradient(135deg,#ef4444,#f87171)',
+  'linear-gradient(135deg,#ec4899,#f472b6)',
+  'linear-gradient(135deg,#06b6d4,#3b82f6)',
+];
+function avatarColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function openSwitchModal() {
+  closeSidebar();
+  renderProfileGrid();
+  document.getElementById('switch-modal').classList.add('open');
+  setTimeout(() => { const inp = document.getElementById('switch-new-name'); if(inp) inp.focus(); }, 300);
+}
+function closeSwitchModal() {
+  document.getElementById('switch-modal').classList.remove('open');
+  document.getElementById('switch-new-name').value = '';
+}
+function handleSwitchBackdropClick(e) {
+  if (e.target === document.getElementById('switch-modal')) closeSwitchModal();
+}
+
+function renderProfileGrid() {
+  const meta = getUsersMeta();
+  const list = meta.list || [];
+  const grid = document.getElementById('profile-grid');
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty"><div class="empty-text">No saved profiles yet</div></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(name => {
+    const isActive = name === state.username;
+    const initial  = name.charAt(0).toUpperCase();
+    const col      = avatarColor(name);
+    // Load a snapshot of the user's data for the sub-line
+    let snapshot;
+    try { snapshot = JSON.parse(localStorage.getItem(userKey(name)) || '{}'); } catch(e) { snapshot = {}; }
+    const score = snapshot.waterCount != null ? '●' : '—';
+    return `
+      <div class="profile-item ${isActive?'active-profile':''}" onclick="${isActive?'closeSwitchModal()':'doSwitchUser(\''+esc(name)+'\')'}">
+        <div class="profile-avatar" style="background:${col}">${initial}</div>
+        <div class="profile-info">
+          <div class="pname">${esc(name)}</div>
+          <div class="psub">💧${snapshot.waterCount||0} glasses · 😴${snapshot.sleepHours||0}h · 🏃${snapshot.exMinutes||0}m today</div>
+        </div>
+        ${!isActive?`<button class="profile-del" onclick="event.stopPropagation();deleteProfile('${esc(name)}')" title="Remove profile">✕</button>`:''}
+      </div>
+    `;
+  }).join('');
+}
+
+function switchToNewUser() {
+  const name = document.getElementById('switch-new-name').value.trim();
+  if (!name) { showToast('Enter a name first!', 'error'); return; }
+  doSwitchUser(name);
+}
+
+function doSwitchUser(name) {
+  if (name === state.username) { closeSwitchModal(); return; }
+  closeSwitchModal();
+
+  // Save current user before switching
+  saveState();
+
+  // Show overlay
+  const overlay = document.getElementById('user-switch-overlay');
+  const avatarEl = document.getElementById('uso-avatar');
+  const textEl   = document.getElementById('uso-text');
+  const subEl    = document.getElementById('uso-sub');
+  const col = avatarColor(name);
+  avatarEl.textContent  = name.charAt(0).toUpperCase();
+  avatarEl.style.background = col;
+  textEl.textContent = 'Welcome, ' + name + '!';
+  subEl.textContent  = 'Loading your health data…';
+  overlay.classList.add('visible');
+
+  setTimeout(() => {
+    // Load new user
+    _stateLoaded = true;  // bypass loadState guard
+    state = loadUserState(name);
+    checkDayReset();
+
+    // Update meta
+    const meta = getUsersMeta();
+    meta.activeUser = name;
+    if (!meta.list) meta.list = [];
+    if (!meta.list.includes(name)) meta.list.push(name);
+    saveUsersMeta(meta);
+    saveState();
+
+    // Update UI
+    document.getElementById('nav-avatar').textContent  = name.charAt(0).toUpperCase();
+    document.getElementById('nav-avatar').style.background = col;
+    document.getElementById('nav-username').textContent = name;
+    applyDark();
+    document.getElementById('dark-toggle-sw').classList.toggle('on', state.darkMode);
+    updateDarkLabel();
+
+    // Reset form inputs
+    const sr = document.getElementById('sleep-range'); if(sr){sr.value=state.sleepHours;onSleepChange();}
+    const er = document.getElementById('ex-range');    if(er){er.value=state.exMinutes;onExChange();}
+
+    renderAll();
+    subEl.textContent = 'All set!';
+
+    setTimeout(() => {
+      overlay.classList.remove('visible');
+      showToast('Switched to ' + name + '\'s profile 👋', 'success');
+    }, 500);
+  }, 900);
+}
+
+function deleteProfile(name) {
+  if (name === state.username) { showToast('Cannot delete the active profile!','error'); return; }
+  localStorage.removeItem(userKey(name));
+  const meta = getUsersMeta();
+  if (meta.list) meta.list = meta.list.filter(n => n !== name);
+  saveUsersMeta(meta);
+  renderProfileGrid();
+  showToast('Profile "' + name + '" removed');
+}
+
+// ---- SMART FITNESS TIPS ----
+const FITNESS_DB = {
+  'weight gain': [
+    { icon:'🍗', title:'Caloric Surplus',   body:'Eat 300–500 extra calories per day above your maintenance level. Focus on nutrient-dense foods like lean meats, whole grains, nuts, and dairy.' },
+    { icon:'💪', title:'Progressive Overload', body:'Increase weights gradually each week. Compound lifts like squats, deadlifts, and bench press stimulate maximum muscle growth across multiple groups.' },
+    { icon:'🥛', title:'Protein Timing',    body:'Consume 1.6–2.2 g of protein per kg of body weight daily. Have a protein-rich meal or shake within 30–60 minutes after every workout.' },
+    { icon:'😴', title:'Sleep to Grow',     body:'Muscle repair happens during sleep. Aim for 7–9 hours per night — growth hormone peaks in the first few hours of deep sleep.' },
+  ],
+  'weight loss': [
+    { icon:'🔥', title:'Caloric Deficit',   body:'Aim for a 300–500 calorie daily deficit. Track meals with a food diary. Small, consistent deficits are more sustainable than crash diets.' },
+    { icon:'🏃', title:'HIIT Cardio',       body:'High-intensity interval training burns 25–30% more calories than steady-state cardio in the same time. Try 20 min, 3× per week.' },
+    { icon:'💧', title:'Hydration Trick',   body:'Drink 500 ml of water 30 minutes before meals. Studies show this reduces calorie intake by up to 13% and boosts metabolism by 24–30%.' },
+    { icon:'🥗', title:'Protein Fills Up',  body:'High-protein diets reduce hunger hormones and boost satiety hormones. Prioritise eggs, chicken, legumes, and low-fat dairy at each meal.' },
+  ],
+  'cardio': [
+    { icon:'❤️', title:'Zone 2 Training',   body:'Train at 60–70% of your max heart rate. This fat-burning zone improves cardiovascular efficiency and can be sustained for long durations.' },
+    { icon:'🚴', title:'Mix It Up',         body:'Rotate between running, cycling, swimming, and rowing. Cross-training prevents overuse injuries and keeps motivation high.' },
+    { icon:'📈', title:'Build Gradually',   body:'Increase your weekly cardio volume by no more than 10% per week. This prevents injury and allows your aerobic system to adapt safely.' },
+    { icon:'🧘', title:'Active Recovery',   body:'On rest days, do light walking or yoga for 20–30 minutes. This improves blood flow, reduces soreness, and maintains aerobic base.' },
+  ],
+  'strength': [
+    { icon:'🏋️', title:'The Big Three',    body:'Squat, deadlift, and bench press are the foundation of strength. Master these compound movements before moving to isolation exercises.' },
+    { icon:'🔄', title:'Rest Matters',      body:'Strength requires 48–72 hours of muscle recovery. Train each muscle group 2× per week with adequate rest between sessions.' },
+    { icon:'📊', title:'Track Your Lifts',  body:'Log every session. If you cannot beat last week\'s reps or weight, your nutrition or sleep needs attention before adding load.' },
+    { icon:'💊', title:'Creatine Works',    body:'Creatine monohydrate is the most researched legal supplement for strength. 3–5 g daily increases strength output and muscle power.' },
+  ],
+  'flexibility': [
+    { icon:'🧘', title:'Daily Stretching',  body:'Spend 10–15 minutes stretching daily, focusing on tight areas. Consistency beats intensity — hold each stretch for 30–60 seconds.' },
+    { icon:'🌊', title:'Yoga for Athletes', body:'Even 2 yoga sessions per week significantly improves range of motion, reduces injury risk, and enhances body awareness.' },
+    { icon:'🌡️', title:'Warm Up First',    body:'Never stretch cold muscles. Do 5 minutes of light cardio before static stretching to increase blood flow and reduce injury risk.' },
+    { icon:'🛌', title:'Sleep Stretches',   body:'A gentle 5-minute stretching routine before bed reduces muscle tension, improves sleep quality, and helps you wake up less stiff.' },
+  ],
+  'sleep recovery': [
+    { icon:'🌙', title:'Sleep Hygiene',     body:'Keep your bedroom cool (18–20°C), dark, and quiet. Consistent sleep and wake times regulate your circadian rhythm within 2 weeks.' },
+    { icon:'📵', title:'Phone-Free Hour',   body:'Blue light from screens suppresses melatonin by up to 50%. Avoid screens for 60 minutes before bed or use blue-light filtering glasses.' },
+    { icon:'🍒', title:'Cherry Juice',      body:'Tart cherry juice is a natural source of melatonin. Studies show 240 ml twice daily increases sleep time by 84 minutes on average.' },
+    { icon:'🏋️', title:'Post-Workout Recovery', body:'Take recovery as seriously as training. Foam roll for 5 minutes after workouts and prioritise protein within 2 hours to rebuild muscle.' },
+  ],
+};
+
+// Fuzzy match — any keyword in the query matches any key in the DB
+function getFitnessTips(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return null;
+  // Direct key match
+  for (const key of Object.keys(FITNESS_DB)) {
+    if (q.includes(key) || key.includes(q)) return { key, tips: FITNESS_DB[key] };
+  }
+  // Word-level match
+  const words = q.split(/\s+/);
+  for (const key of Object.keys(FITNESS_DB)) {
+    if (words.some(w => key.includes(w) || w.length > 3 && key.replace(/\s/g,'').includes(w)))
+      return { key, tips: FITNESS_DB[key] };
+  }
+  return null;
+}
+
+function onFitnessSearch() {
+  const q = document.getElementById('fitness-search').value.trim();
+  renderFitnessTips(q);
+  // Update active chip
+  document.querySelectorAll('.fitness-chip').forEach(c => {
+    c.classList.toggle('active-chip', c.textContent.toLowerCase().includes(q.toLowerCase()) && q.length > 0);
+  });
+}
+
+function setFitnessSearch(val) {
+  const inp = document.getElementById('fitness-search');
+  inp.value = val;
+  onFitnessSearch();
+  inp.focus();
+}
+
+const BADGE_STYLES = {
+  'weight gain':     { bg:'rgba(16,185,129,0.15)',  color:'var(--green-l)',  label:'💪 Weight Gain',  theme:'ftip-gain' },
+  'weight loss':     { bg:'rgba(59,130,246,0.15)',  color:'var(--blue-l)',   label:'🔥 Weight Loss',  theme:'ftip-loss' },
+  'cardio':          { bg:'rgba(239,68,68,0.12)',   color:'#f87171',         label:'❤️ Cardio',       theme:'ftip-loss' },
+  'strength':        { bg:'rgba(245,158,11,0.15)',  color:'var(--amber-l)',  label:'🏋️ Strength',    theme:'ftip-general' },
+  'flexibility':     { bg:'rgba(139,92,246,0.15)', color:'var(--purple-l)', label:'🧘 Flexibility',  theme:'ftip-loss' },
+  'sleep recovery':  { bg:'rgba(139,92,246,0.15)', color:'var(--purple-l)', label:'😴 Recovery',     theme:'ftip-loss' },
+};
+
+function renderFitnessTips(q) {
+  const result = document.getElementById('fitness-tips-result');
+  if (!q) {
+    result.innerHTML = `<div class="ftips-empty"><div class="ftips-empty-icon">🔍</div><div class="ftips-empty-text">Type a fitness goal to get personalised tips</div><div class="ftips-empty-hint">Try: "weight gain", "weight loss", "cardio", "strength"</div></div>`;
+    return;
+  }
+  const found = getFitnessTips(q);
+  if (!found) {
+    result.innerHTML = `<div class="ftips-empty"><div class="ftips-empty-icon">🤔</div><div class="ftips-empty-text">No tips found for "<strong>${esc(q)}</strong>"</div><div class="ftips-empty-hint">Try: weight gain · weight loss · cardio · strength · flexibility · sleep recovery</div></div>`;
+    return;
+  }
+  const style = BADGE_STYLES[found.key] || { bg:'rgba(245,158,11,0.15)', color:'var(--amber-l)', label:'🏋️ Fitness', theme:'ftip-general' };
+  result.innerHTML = `
+    <div class="ftips-header">
+      <span class="ftips-header-badge" style="background:${style.bg};color:${style.color};border:1px solid ${style.color}20">${style.label}</span>
+      <span class="ftips-header-title">${found.tips.length} tips for you</span>
+    </div>
+    <div class="ftips-grid">
+      ${found.tips.map((tip, i) => `
+        <div class="ftip-card ${style.theme}" id="ftip-${i}" style="transition-delay:${i*0.07}s">
+          <div class="ftip-number">${i+1}</div>
+          <div class="ftip-icon-wrap">${tip.icon}</div>
+          <div class="ftip-card-title">${esc(tip.title)}</div>
+          <div class="ftip-card-body">${esc(tip.body)}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  // Trigger entrance animation after a brief delay so DOM is ready
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      found.tips.forEach((_, i) => {
+        const el = document.getElementById('ftip-'+i);
+        if (el) el.classList.add('visible');
+      });
+    });
+  });
+}
+
+// ---- INTRO SCREEN ----
+(function initIntro() {
+  loadState();
+  const introEl = document.getElementById('intro-screen');
+
+  // If returning user (has username saved), skip intro entirely
+  const _meta = getUsersMeta();
+  if (_meta.activeUser) {
+    if (introEl) introEl.style.display = 'none';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    initApp();
+    return;
+  }
+
+  // Hide the old login screen – intro handles name capture
+  document.getElementById('login-screen').style.display = 'none';
+
+  // Spawn floating health icons
+  const HEALTH_ICONS = [
+    { icon: '💧', color: 'rgba(59,130,246,0.6)', size: 26 },
+    { icon: '❤️', color: 'rgba(239,68,68,0.6)',  size: 30 },
+    { icon: '💊', color: 'rgba(16,185,129,0.6)', size: 24 },
+    { icon: '🌙', color: 'rgba(139,92,246,0.6)', size: 28 },
+    { icon: '🏃', color: 'rgba(245,158,11,0.6)', size: 26 },
+    { icon: '🍎', color: 'rgba(239,68,68,0.5)',  size: 22 },
+    { icon: '🧘', color: 'rgba(59,130,246,0.5)', size: 25 },
+    { icon: '💪', color: 'rgba(245,158,11,0.5)', size: 24 },
+    { icon: '🫀', color: 'rgba(239,68,68,0.5)',  size: 22 },
+    { icon: '🥗', color: 'rgba(16,185,129,0.5)', size: 23 },
+    { icon: '⭐', color: 'rgba(251,191,36,0.5)', size: 20 },
+    { icon: '🌿', color: 'rgba(16,185,129,0.5)', size: 21 },
+  ];
+  const floatContainer = document.getElementById('intro-float-icons');
+  const vw = window.innerWidth, vh = window.innerHeight;
+  // safe zone = centre 40% of screen (avoid overlapping logo)
+  const safeL = vw * 0.0, safeR = vw * 1.0, safeT = vh * 0.0, safeB = vh * 1.0;
+  const centerX = vw / 2, centerY = vh / 2;
+  HEALTH_ICONS.forEach((item, i) => {
+    let x, y, attempts = 0;
+    do {
+      x = safeL + Math.random() * (safeR - safeL);
+      y = safeT + Math.random() * (safeB - safeT);
+      attempts++;
+    } while (Math.abs(x - centerX) < 200 && Math.abs(y - centerY) < 220 && attempts < 20);
+
+    const el = document.createElement('div');
+    el.className = 'intro-icon';
+    el.textContent = item.icon;
+    el.style.cssText = `
+      left: ${x}px; top: ${y}px;
+      font-size: ${item.size}px;
+      filter: drop-shadow(0 0 12px ${item.color});
+      animation-duration: ${3 + Math.random() * 3}s, 0.6s;
+      animation-delay: ${0.4 + i * 0.12}s, ${0.4 + i * 0.12}s;
+      animation-fill-mode: both, both;
+    `;
+    floatContainer.appendChild(el);
+  });
+
+  // Canvas particle system
+  const canvas = document.getElementById('intro-canvas');
+  const ctx2d = canvas.getContext('2d');
+  let particles = [];
+  let animFrame;
+  function resizeCanvas() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = -Math.random() * 0.6 - 0.2;
+      this.size = Math.random() * 2 + 0.5;
+      this.opacity = Math.random() * 0.5 + 0.1;
+      this.maxLife = 200 + Math.random() * 200;
+      this.life = 0;
+      const palettes = ['59,130,246','6,182,212','139,92,246','16,185,129','245,158,11'];
+      this.color = palettes[Math.floor(Math.random() * palettes.length)];
+    }
+    update() {
+      this.x  += this.vx;
+      this.y  += this.vy;
+      this.life++;
+      const ratio = this.life / this.maxLife;
+      this.currentOpacity = ratio < 0.2 ? ratio / 0.2 * this.opacity
+                          : ratio > 0.8 ? (1 - ratio) / 0.2 * this.opacity
+                          : this.opacity;
+      if (this.life >= this.maxLife) this.reset();
+    }
+    draw() {
+      ctx2d.beginPath();
+      ctx2d.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx2d.fillStyle = `rgba(${this.color},${this.currentOpacity})`;
+      ctx2d.fill();
+    }
+  }
+
+  for (let i = 0; i < 80; i++) {
+    const p = new Particle();
+    p.life = Math.random() * p.maxLife; // stagger start
+    particles.push(p);
+  }
+
+  // Draw connections between close particles
+  function drawConnections() {
+    const maxDist = 100;
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < maxDist) {
+          const alpha = (1 - dist / maxDist) * 0.08;
+          ctx2d.beginPath();
+          ctx2d.moveTo(particles[i].x, particles[i].y);
+          ctx2d.lineTo(particles[j].x, particles[j].y);
+          ctx2d.strokeStyle = `rgba(59,130,246,${alpha})`;
+          ctx2d.lineWidth = 0.5;
+          ctx2d.stroke();
+        }
+      }
+    }
+  }
+
+  function animateParticles() {
+    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+    drawConnections();
+    particles.forEach(p => { p.update(); p.draw(); });
+    animFrame = requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+
+  // Animate intro progress bar (decorative, fills over ~2.5s)
+  const progFill = document.getElementById('intro-progress-fill');
+  let progVal = 0;
+  const progInterval = setInterval(() => {
+    progVal = Math.min(progVal + 1, 100);
+    progFill.style.width = progVal + '%';
+    if (progVal >= 100) clearInterval(progInterval);
+  }, 25);
+
+  // Store cleanup ref
+  window._introCleanup = function() {
+    cancelAnimationFrame(animFrame);
+    clearInterval(progInterval);
+    window.removeEventListener('resize', resizeCanvas);
+  };
+
+  // Enter key in name input triggers launch
+  const nameInput = document.getElementById('intro-name-input');
+  if (nameInput) nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') introLaunch(); });
+})();
+
+// Transition from phase1 (splash) to phase2 (welcome form)
+function showIntroWelcome() {
+  const phase1 = document.getElementById('intro-phase1');
+  const phase2 = document.getElementById('intro-phase2');
+
+  phase1.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  phase1.style.opacity = '0';
+  phase1.style.transform = 'translateY(-30px) scale(0.96)';
+
+  setTimeout(() => {
+    phase1.style.display = 'none';
+    phase2.style.display = 'block';
+    phase2.style.opacity = '0';
+    phase2.style.transform = 'translateY(20px)';
+    phase2.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        phase2.style.opacity = '1';
+        phase2.style.transform = 'translateY(0)';
+      });
+    });
+
+    // Cycle through bubble messages
+    const msgs = [
+      'Hi there! 👋 I\'m your health buddy.',
+      'I\'ll track your water, sleep & more!',
+      'Let\'s get you started! 😊',
+      'Type your name below! ✨',
+    ];
+    let mi = 0;
+    const bubbleEl = document.getElementById('intro-bubble-text');
+    const bInterval = setInterval(() => {
+      mi = (mi + 1) % msgs.length;
+      if (bubbleEl) {
+        bubbleEl.style.opacity = '0';
+        setTimeout(() => {
+          bubbleEl.textContent = msgs[mi];
+          bubbleEl.style.opacity = '1';
+        }, 200);
+      }
+    }, 2600);
+    window._bubbleInterval = bInterval;
+
+    setTimeout(() => {
+      const inp = document.getElementById('intro-name-input');
+      if (inp) inp.focus();
+    }, 600);
+  }, 450);
+}
+
+// Launch from intro to dashboard
+function introLaunch() {
+  const name = (document.getElementById('intro-name-input')?.value || '').trim();
+  if (!name) {
+    // Shake the input
+    const inp = document.getElementById('intro-name-input');
+    if (inp) {
+      inp.style.animation = 'none'; void inp.offsetWidth;
+      inp.style.animation = 'inputShake 0.4s ease';
+      inp.style.borderColor = 'rgba(239,68,68,0.6)';
+      setTimeout(() => { inp.style.borderColor = ''; inp.style.animation = ''; }, 800);
+    }
+    showToast('Please enter your name! 😊', 'error');
+    return;
+  }
+
+  // Disable button
+  const btn = document.getElementById('intro-launch-btn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; }
+  if (window._bubbleInterval) clearInterval(window._bubbleInterval);
+
+  // Show transition overlay
+  const transEl = document.getElementById('intro-transition');
+  const transText = document.getElementById('intro-trans-name');
+  if (transText) transText.textContent = name + '!';
+  transEl.classList.add('running');
+
+  // After transition peaks, swap screens
+  setTimeout(() => {
+    // Hide intro
+    if (window._introCleanup) window._introCleanup();
+    document.getElementById('intro-screen').style.display = 'none';
+
+    // Set username and fire normal login flow
+    state = loadUserState(name);
+    checkDayReset();
+    const launchMeta = getUsersMeta();
+    launchMeta.activeUser = name;
+    if (!launchMeta.list) launchMeta.list = [];
+    if (!launchMeta.list.includes(name)) launchMeta.list.push(name);
+    saveUsersMeta(launchMeta);
+    saveState();
+    document.getElementById('app').classList.add('visible');
+    initApp();
+  }, 700);
+
+  // Fade out transition overlay
+  setTimeout(() => {
+    transEl.classList.remove('running');
+  }, 1400);
+}
+
+// Input shake keyframe (added dynamically)
+(function addInputShakeStyle() {
+  const s = document.createElement('style');
+  s.textContent = `@keyframes inputShake {
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-8px);}
+    40%{transform:translateX(8px);}
+    60%{transform:translateX(-5px);}
+    80%{transform:translateX(5px);}
+  }`;
+  document.head.appendChild(s);
+})();
+
+// ---- BOOT ----
+// Note: loadState() is called inside initIntro() above.
+// For returning users initApp() is also called there.
+// For new users, introLaunch() calls initApp() after transition.
+document.getElementById('login-name').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+
+<!-- ===== AI HEALTH ASSISTANT CHAT ===== -->
+<style>
+.ai-pulse-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.7);
+  animation: aiPulseRing 2s ease-in-out infinite;
+  display: none;
+}
+.ai-pulse-dot.active { display: block; }
+@keyframes aiPulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+  70%  { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+#ai-chat-panel {
+  position: fixed; right: 20px; bottom: 20px;
+  width: 380px; max-height: 600px;
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 22px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.1);
+  display: flex; flex-direction: column;
+  z-index: 999;
+  transform: translateY(20px) scale(0.95);
+  opacity: 0; pointer-events: none;
+  transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+  overflow: hidden;
+}
+#ai-chat-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+@media (max-width: 460px) { #ai-chat-panel { right: 8px; bottom: 8px; width: calc(100vw - 16px); max-height: 70vh; } }
+.ai-chat-header {
+  padding: 16px 18px 12px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(6,182,212,0.08));
+  border-bottom: 1px solid var(--glass-border);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.ai-avatar-wrap { position: relative; flex-shrink: 0; }
+.ai-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  box-shadow: 0 0 16px rgba(59,130,246,0.4);
+  animation: aiAvatarPulse 3s ease-in-out infinite;
+}
+@keyframes aiAvatarPulse {
+  0%,100% { box-shadow: 0 0 16px rgba(59,130,246,0.4); }
+  50%     { box-shadow: 0 0 26px rgba(59,130,246,0.7), 0 0 40px rgba(6,182,212,0.3); }
+}
+.ai-status-dot {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #10b981; border: 2px solid var(--bg-surface);
+}
+.ai-header-info { flex: 1; }
+.ai-header-name { font-family: 'Space Grotesk',sans-serif; font-weight: 700; font-size: 15px; color: var(--text-1); }
+.ai-header-sub { font-size: 11.5px; color: var(--text-2); margin-top: 2px; }
+.ai-header-actions { display: flex; gap: 6px; }
+.ai-hdr-btn {
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 8px; padding: 5px 9px; cursor: pointer;
+  font-size: 14px; color: var(--text-2); transition: all 0.2s;
+}
+.ai-hdr-btn:hover { background: var(--glass-hover); color: var(--text-1); }
+.ai-quick-tabs {
+  display: flex; gap: 6px; padding: 10px 14px 0; flex-shrink: 0;
+  overflow-x: auto; scrollbar-width: none;
+}
+.ai-quick-tabs::-webkit-scrollbar { display: none; }
+.ai-qtab {
+  flex-shrink: 0; padding: 5px 11px; border-radius: 99px; font-size: 11.5px;
+  border: 1px solid var(--glass-border); background: var(--glass);
+  color: var(--text-2); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.ai-qtab:hover { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.4); color: var(--blue-l); }
+.ai-messages {
+  flex: 1; overflow-y: auto; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth;
+}
+.ai-messages::-webkit-scrollbar { width: 3px; }
+.ai-messages::-webkit-scrollbar-thumb { background: var(--text-3); border-radius: 99px; }
+.ai-msg { display: flex; gap: 8px; align-items: flex-start; animation: msgSlideIn 0.35s cubic-bezier(.34,1.4,.64,1) both; }
+@keyframes msgSlideIn { from { opacity:0; transform: translateY(12px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }
+.ai-msg.user { flex-direction: row-reverse; }
+.ai-msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0; margin-top: 2px;
+}
+.ai-msg.bot .ai-msg-avatar { background: linear-gradient(135deg, #2563eb, #0891b2); box-shadow: 0 0 10px rgba(59,130,246,0.3); }
+.ai-msg.user .ai-msg-avatar { background: linear-gradient(135deg, #7c3aed, #4f46e5); }
+.ai-bubble { max-width: 82%; padding: 10px 13px; border-radius: 16px; font-size: 13px; line-height: 1.55; }
+.ai-msg.bot .ai-bubble { background: var(--bg-card); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; color: var(--text-1); }
+.ai-msg.user .ai-bubble { background: linear-gradient(135deg, #2563eb, #0891b2); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+.ai-emotion-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 99px; font-size: 10.5px; font-weight: 600; margin-bottom: 5px;
+}
+.emotion-stressed { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+.emotion-tired    { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2); }
+.emotion-happy    { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+.emotion-neutral  { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }
+.ai-action-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.ai-chip {
+  padding: 4px 10px; border-radius: 99px; font-size: 11.5px;
+  background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25);
+  color: var(--blue-l); cursor: pointer; transition: all 0.2s;
+}
+.ai-chip:hover { background: rgba(59,130,246,0.25); transform: translateY(-1px); }
+.ai-typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+.ai-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); animation: typingBounce 1.2s ease infinite; }
+.ai-typing span:nth-child(2) { animation-delay: 0.15s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typingBounce { 0%,60%,100% { transform: translateY(0); background: var(--text-3); } 30% { transform: translateY(-6px); background: var(--blue-l); } }
+.ai-calorie-card { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.08)); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 10px 12px; margin-top: 6px; }
+.ai-cal-title { font-weight: 700; font-size: 13px; color: var(--green-l); margin-bottom: 4px; }
+.ai-cal-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-2); padding: 2px 0; }
+.ai-cal-total { font-weight: 700; color: var(--text-1); font-size: 14px; margin-top: 4px; }
+.ai-story-card { background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.08)); border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; padding: 10px 12px; margin-top: 6px; font-size: 12.5px; color: var(--text-1); line-height: 1.6; }
+.ai-story-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--purple-l); margin-bottom: 6px; display: block; }
+.ai-input-area { padding: 10px 12px 12px; border-top: 1px solid var(--glass-border); background: var(--bg-surface); flex-shrink: 0; }
+.ai-input-row { display: flex; gap: 8px; align-items: flex-end; }
+.ai-input-wrap { flex: 1; position: relative; }
+.ai-text-input {
+  width: 100%; padding: 10px 14px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  color: var(--text-1); font-family: 'DM Sans',sans-serif; font-size: 13px;
+  resize: none; outline: none; transition: border-color 0.2s;
+  max-height: 100px; min-height: 40px; line-height: 1.4;
+}
+.ai-text-input:focus { border-color: rgba(59,130,246,0.5); }
+.ai-text-input::placeholder { color: var(--text-3); }
+.ai-input-actions { display: flex; gap: 6px; }
+.ai-photo-btn, .ai-send-btn {
+  width: 40px; height: 40px; border-radius: 11px; border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; transition: all 0.2s; flex-shrink: 0;
+}
+.ai-photo-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-2); }
+.ai-photo-btn:hover { background: rgba(16,185,129,0.15); color: var(--green-l); border-color: rgba(16,185,129,0.3); }
+.ai-send-btn { background: linear-gradient(135deg, #2563eb, #0891b2); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+.ai-send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 18px rgba(37,99,235,0.55); }
+.ai-send-btn:active { transform: scale(0.95); }
+#ai-photo-input { display: none; }
+</style>
+
+<input type="file" id="ai-photo-input" accept="image/*" onchange="handleFoodPhoto(event)" />
+
+<div id="ai-chat-panel">
+  <div class="ai-chat-header">
+    <div class="ai-avatar-wrap">
+      <div class="ai-avatar">🤖</div>
+      <div class="ai-status-dot"></div>
+    </div>
+    <div class="ai-header-info">
+      <div class="ai-header-name">HealthBot AI</div>
+      <div class="ai-header-sub">Your personal health companion</div>
+    </div>
+    <div class="ai-header-actions">
+      <button class="ai-hdr-btn" onclick="clearAIChat()" title="Clear chat">🗑️</button>
+      <button class="ai-hdr-btn" onclick="toggleAIChat()" title="Close">✕</button>
+    </div>
+  </div>
+  <div class="ai-quick-tabs">
+    <div class="ai-qtab" onclick="aiQuickPrompt('health_status')">📊 My Status</div>
+    <div class="ai-qtab" onclick="aiQuickPrompt('weekly_story')">📖 Week Story</div>
+    <div class="ai-qtab" onclick="aiQuickPrompt('advice')">💡 Give Advice</div>
+    <div class="ai-qtab" onclick="aiQuickPrompt('challenge')">🏆 Challenge Me</div>
+    <div class="ai-qtab" onclick="aiQuickPrompt('calories')">🍽️ Count Calories</div>
+  </div>
+  <div class="ai-messages" id="ai-messages"></div>
+  <div class="ai-input-area">
+    <div class="ai-input-row">
+      <div class="ai-input-wrap">
+        <textarea class="ai-text-input" id="ai-text-input" placeholder="Ask anything about your health…" rows="1"
+          onkeydown="aiInputKeydown(event)" oninput="autoResizeAIInput(this)"></textarea>
+      </div>
+      <div class="ai-input-actions">
+        <button class="ai-photo-btn" onclick="document.getElementById('ai-photo-input').click()" title="Upload food photo">📷</button>
+        <button class="ai-send-btn" onclick="sendAIMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== AI CHAT — Groq API (Free, Never Expires) =====
+const GROQ_KEY = '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';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+let aiChatOpen = false;
+let aiMessages = [];
+let aiTyping = false;
+
+function toggleAIChat() {
+  aiChatOpen = !aiChatOpen;
+  const panel = document.getElementById('ai-chat-panel');
+  panel.classList.toggle('open', aiChatOpen);
+  document.getElementById('ai-chat-btn').style.background = aiChatOpen ? 'rgba(59,130,246,0.2)' : '';
+  document.getElementById('ai-pulse-dot').classList.add('active');
+  if (aiChatOpen) {
+    if (aiMessages.length === 0) showAIWelcome();
+    setTimeout(() => document.getElementById('ai-text-input').focus(), 300);
+  }
+}
+
+function getPKHour() {
+  const pkTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' }));
+  return pkTime.getHours();
+}
+
+function showAIWelcome() {
+  const name = (typeof state !== 'undefined' && state.username) ? state.username : 'there';
+  const h = getPKHour();
+  const greet = h >= 5 && h < 12 ? '🌅 Good morning'
+              : h >= 12 && h < 17 ? '☀️ Good afternoon'
+              : h >= 17 && h < 21 ? '🌆 Good evening'
+              : '🌙 Good night';
+  addAIMessage('bot', `${greet}, **${name}**! Main hoon tumhara AI Health Companion 🤖\n\nTumhara health data mujhe pata hai — water, sleep, exercise, medicines. Is liye main tumhe *real* personalized advice de sakta hoon!\n\n• 📊 Health status analysis\n• 😤 Mood detect karke respond karna\n• 📸 Food photo se calories count\n• 📖 Weekly health story\n• 🏆 Daily health challenges\n\nKya poochna hai?`, []);
+}
+
+function detectEmotion(text) {
+  const t = text.toLowerCase();
+  if (/thak|tired|neend|sleepy|exhaust|bored|sust/.test(t)) return 'tired';
+  if (/stress|tension|anxious|worried|pareshan|frustrated|gussa/.test(t)) return 'stressed';
+  if (/happy|khush|great|amazing|acha|accha|excited|energetic/.test(t)) return 'happy';
+  return 'neutral';
+}
+
+function emotionLabel(e) {
+  const map = { tired: ['😴 Tired', 'emotion-tired'], stressed: ['😤 Stressed', 'emotion-stressed'], happy: ['😊 Happy', 'emotion-happy'], neutral: ['😐 Neutral', 'emotion-neutral'] };
+  return map[e] || map.neutral;
+}
+
+function getHealthSnapshot() {
+  if (typeof state === 'undefined') return { water:0, sleep:0, exercise:0, score:0, medPct:0, name:'Friend' };
+  const medTotal = state.medicines.length;
+  const medDone = state.medicines.filter(m => m.taken).length;
+  const medPct = medTotal > 0 ? Math.round(medDone / medTotal * 100) : 0;
+  const score = typeof calcScore === 'function' ? calcScore() : 0;
+  return { water: state.waterCount, sleep: state.sleepHours, exercise: state.exMinutes, score, medPct, name: state.username };
+}
+
+function buildSystemPrompt() {
+  const snap = getHealthSnapshot();
+  const h = getPKHour();
+  const timeCtx = h >= 5 && h < 12 ? 'Subah ka waqt hai Pakistan mein. Energetic aur motivating raho.'
+                : h >= 12 && h < 17 ? 'Dopahar ka waqt hai Pakistan mein. Practical aur direct raho.'
+                : h >= 17 && h < 21 ? 'Shaam ka waqt hai Pakistan mein. Warm aur friendly raho.'
+                : 'Raat ka waqt hai Pakistan mein. Calm aur relaxed raho.';
+  return `You are HealthBot AI, an intelligent health companion in HealthHub app. Speak in Hinglish (mix of Urdu/Roman Urdu and English) — match user's language style.
+
+User health data:
+- Name: ${snap.name}
+- Water today: ${snap.water}/8 glasses
+- Sleep last night: ${snap.sleep} hours
+- Exercise today: ${snap.exercise} minutes
+- Medicine adherence: ${snap.medPct}%
+- Health score: ${snap.score}/100
+
+${timeCtx}
+
+Personality:
+- Reference user's actual health data naturally
+- Be like a caring witty best friend, not a boring medical bot
+- For stress/tired: suggest breathing, hydration, rest
+- For happy: celebrate, give fun challenges
+- Keep responses 3-6 lines, use emojis naturally
+- For calories: realistic estimate with breakdown
+- For weekly story: narrative fun format
+- NEVER tell user to sleep unless they specifically ask about sleep`;
+}
+
+function aiQuickPrompt(type) {
+  const prompts = {
+    health_status: 'Mera aaj ka health status batao',
+    weekly_story: 'Meri is hafte ki health story banao',
+    advice: 'Mujhe aaj ke liye personalized health advice do',
+    challenge: 'Mujhe ek health challenge do jo main aaj complete kar sakoon',
+    calories: 'Mujhe batao main food photo se calories kaise count kar sakta hoon',
+  };
+  document.getElementById('ai-text-input').value = prompts[type] || '';
+  document.getElementById('ai-text-input').focus();
+  if (type !== 'calories') sendAIMessage();
+}
+
+async function sendAIMessage() {
+  const input = document.getElementById('ai-text-input');
+  const text = input.value.trim();
+  if (!text || aiTyping) return;
+  input.value = '';
+  autoResizeAIInput(input);
+
+  const emotion = detectEmotion(text);
+  const [emotionText, emotionClass] = emotionLabel(emotion);
+  addAIMessage('user', text, [], emotion !== 'neutral' ? { text: emotionText, cls: emotionClass } : null);
+
+  aiTyping = true;
+  const typingId = addTypingIndicator();
+
+  try {
+    const history = aiMessages.filter(m => m.role !== 'typing').slice(-10)
+      .map(m => ({ role: m.role === 'bot' ? 'assistant' : 'user', content: m.text.replace(/<[^>]+>/g, '') }));
+
+    const response = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'system', content: buildSystemPrompt() }, ...history],
+        max_tokens: 800, temperature: 0.8
+      })
+    });
+
+    const data = await response.json();
+    removeTypingIndicator(typingId);
+    aiTyping = false;
+
+    const reply = data?.choices?.[0]?.message?.content;
+    if (reply) {
+      const isStory = /hafte|week|story|safar|journey/i.test(text);
+      addAIMessage('bot', reply, [], null, isStory ? 'story' : null);
+    } else {
+      addAIMessage('bot', `😔 Masla: ${data?.error?.message || 'Dobara try karo!'}`, []);
+    }
+  } catch (err) {
+    removeTypingIndicator(typingId);
+    aiTyping = false;
+    addAIMessage('bot', '⚡ Network issue! Internet check karo.', []);
+  }
+}
+
+async function handleFoodPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  addAIMessage('user', '📸 Food photo upload ki — calories batao!', []);
+  const typingId = addTypingIndicator();
+  aiTyping = true;
+
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file);
+    });
+
+    const response = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [{ role: 'user', content: [
+          { type: 'image_url', image_url: { url: base64 } },
+          { type: 'text', text: 'Is food ki calories estimate karo. Sirf JSON: {"dish":"name","serving":"estimate","calories":number,"protein":"Xg","carbs":"Xg","fat":"Xg","tip":"Hinglish health tip"}' }
+        ]}],
+        max_tokens: 500, temperature: 0.3
+      })
+    });
+
+    const data = await response.json();
+    removeTypingIndicator(typingId);
+    aiTyping = false;
+    const reply = data?.choices?.[0]?.message?.content;
+    if (reply) {
+      try { addCalorieCard(JSON.parse(reply.replace(/```json|```/g, '').trim())); }
+      catch { addAIMessage('bot', reply, []); }
+    } else {
+      addAIMessage('bot', '😔 Photo analyze nahi ho saki. Dobara try karo!', []);
+    }
+  } catch(err) {
+    removeTypingIndicator(typingId); aiTyping = false;
+    addAIMessage('bot', '😔 Photo analyze nahi ho saki!', []);
+  }
+}
+
+function addCalorieCard(n) {
+  const el = document.createElement('div');
+  el.className = 'ai-msg bot';
+  el.innerHTML = `<div class="ai-msg-avatar">🤖</div><div class="ai-bubble"><div style="font-size:12.5px;color:var(--text-2);margin-bottom:6px">📸 Food Analysis!</div><div class="ai-calorie-card"><div class="ai-cal-title">🍽️ ${n.dish||'Dish'}</div><div class="ai-cal-row"><span>Serving</span><span>${n.serving||'1 serving'}</span></div><div class="ai-cal-row"><span>🥩 Protein</span><span>${n.protein||'—'}</span></div><div class="ai-cal-row"><span>🍞 Carbs</span><span>${n.carbs||'—'}</span></div><div class="ai-cal-row"><span>🧈 Fat</span><span>${n.fat||'—'}</span></div><div class="ai-cal-row ai-cal-total"><span>🔥 Calories</span><span>${n.calories||'—'} kcal</span></div></div>${n.tip?`<div style="margin-top:8px;font-size:12px;color:var(--text-2)">💡 ${n.tip}</div>`:''}</div>`;
+  document.getElementById('ai-messages').appendChild(el);
+  scrollAIToBottom();
+  aiMessages.push({ role: 'bot', text: `Food: ${n.dish} ${n.calories} kcal` });
+}
+
+function renderMarkdown(text) {
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+}
+
+function addAIMessage(role, text, chips=[], emotionTag=null, cardType=null) {
+  const el = document.createElement('div');
+  el.className = `ai-msg ${role}`;
+  const avatar = role === 'bot' ? '🤖' : (typeof state !== 'undefined' ? state.username.charAt(0).toUpperCase() : '?');
+  let content = '';
+  if (emotionTag) content += `<div class="ai-emotion-tag ${emotionTag.cls}">${emotionTag.text}</div>`;
+  if (cardType === 'story') {
+    content += `<div class="ai-story-card"><span class="ai-story-badge">📖 Weekly Health Story</span>${renderMarkdown(text)}</div>`;
+  } else {
+    content += renderMarkdown(text);
+  }
+  if (chips && chips.length > 0) content += `<div class="ai-action-chips">${chips.map(c=>`<span class="ai-chip" onclick="document.getElementById('ai-text-input').value='${c}';sendAIMessage()">${c}</span>`).join('')}</div>`;
+  el.innerHTML = `<div class="ai-msg-avatar">${avatar}</div><div class="ai-bubble">${content}</div>`;
+  document.getElementById('ai-messages').appendChild(el);
+  scrollAIToBottom();
+  aiMessages.push({ role, text });
+}
+
+function addTypingIndicator() {
+  const id = 'typing-' + Date.now();
+  const el = document.createElement('div');
+  el.className = 'ai-msg bot'; el.id = id;
+  el.innerHTML = `<div class="ai-msg-avatar">🤖</div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+  document.getElementById('ai-messages').appendChild(el);
+  scrollAIToBottom();
+  return id;
+}
+
+function removeTypingIndicator(id) { const el = document.getElementById(id); if (el) el.remove(); }
+function scrollAIToBottom() { const el = document.getElementById('ai-messages'); setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50); }
+function clearAIChat() { aiMessages = []; document.getElementById('ai-messages').innerHTML = ''; showAIWelcome(); }
+function aiInputKeydown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } }
+function autoResizeAIInput(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  setTimeout(() => {
+    if (!localStorage.getItem('pwa-dismissed')) {
+      document.getElementById('pwa-install-banner').classList.add('show');
+    }
+  }, 3000);
+});
+
+function pwaTriggerInstall() {
+  document.getElementById('pwa-install-banner').classList.remove('show');
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  }
+}
+
+function pwaDismiss() {
+  document.getElementById('pwa-install-banner').classList.remove('show');
+  localStorage.setItem('pwa-dismissed', '1');
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-install-banner').classList.remove('show');
+});
+</script>
+
+<!-- PWA Install Banner -->
+<style>
+#pwa-install-banner {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  z-index: 9999; width: min(360px, calc(100vw - 32px));
+  background: var(--bg-surface); border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  padding: 16px 18px; display: flex; align-items: center; gap: 14px;
+  opacity: 0; pointer-events: none;
+  transition: all 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+#pwa-install-banner.show { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
+.pwa-icon { width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; background: linear-gradient(135deg, #1d4ed8, #0891b2); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.pwa-text { flex: 1; }
+.pwa-title { font-family: 'Space Grotesk',sans-serif; font-weight: 700; font-size: 14px; color: var(--text-1); margin-bottom: 2px; }
+.pwa-sub { font-size: 11.5px; color: var(--text-2); line-height: 1.4; }
+.pwa-btns { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.pwa-install-btn { padding: 8px 16px; border-radius: 10px; border: none; background: linear-gradient(135deg, #2563eb, #0891b2); color: #fff; font-family: 'Space Grotesk',sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.pwa-dismiss-btn { padding: 5px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--text-2); font-size: 11px; cursor: pointer; text-align: center; }
+</style>
+
+<div id="pwa-install-banner">
+  <div class="pwa-icon">🏥</div>
+  <div class="pwa-text">
+    <div class="pwa-title">Install HealthHub</div>
+    <div class="pwa-sub">Home screen pe add karo — app jaisi feel! 📱</div>
+  </div>
+  <div class="pwa-btns">
+    <button class="pwa-install-btn" onclick="pwaTriggerInstall()">Install ↓</button>
+    <button class="pwa-dismiss-btn" onclick="pwaDismiss()">Later</button>
+  </div>
+</div>
+
+</body>
+</html>
